@@ -49,6 +49,13 @@ class ExperimentConfig:
         }
     )
 
+    OUTPUT_ROOT: Path = field(
+        default=Path("output"),
+        metadata={
+            "docs": "Output root directory"
+        }
+    )
+
     DATA_FILENAME: str = field(
         default="data_full",
         metadata={

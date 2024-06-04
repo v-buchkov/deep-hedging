@@ -1,17 +1,17 @@
 import torch
 import torch.nn as nn
 
-from .neural_hedger import NeuralHedger
+from .abstract_hedger import AbstractHedger
 
 
-class LSTMTextsHedger(NeuralHedger):
+class LSTMTextsHedger(AbstractHedger):
     def __init__(self, input_size: int, num_layers: int, hidden_size: int, dt: float):
-        super().__init__(
-            input_size=input_size,
-            num_layers=num_layers,
-            hidden_size=hidden_size,
-            dt=dt
-        )
+        super().__init__()
+
+        self.input_size = input_size
+        self.num_layers = num_layers
+        self.hidden_size = hidden_size
+        self.dt = dt
 
         self.lstm = nn.LSTM(input_size, self.hidden_size, num_layers=num_layers, batch_first=True)
 

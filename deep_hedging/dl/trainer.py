@@ -1,5 +1,7 @@
 import os
+import datetime as dt
 from typing import Type, Tuple, Optional, Any, Union
+from pathlib import Path
 
 import pandas as pd
 
@@ -27,6 +29,8 @@ class Trainer:
 
         self.hedger = None
         self.train_loader, self.test_loader = None, None
+        self.weights, self.train_diffs, self.val_diffs = None, None, None
+        self.dt = None
 
         self._initialize()
 
@@ -34,12 +38,13 @@ class Trainer:
         data_df = self._load_df().resample(self.config.REBAL_FREQ).ffill()
         train_set, test_set = self._get_datasets(data_df)
         self.train_loader, self.test_loader = self._get_dataloaders(train_set, test_set)
+        self.dt = train_set.average_dt
 
         self.hedger = self.model_cls(
             input_size=train_set[0][0].shape[1],
             num_layers=self.config.NUM_LAYERS,
             hidden_size=self.config.HIDDEN_DIM,
-            dt=train_set.average_dt
+            dt=self.dt
         )
         self.hedger = self.hedger.to(self.config.DEVICE)
 
@@ -108,7 +113,7 @@ class Trainer:
 
         return train_losses, val_losses, weights, train_diffs, val_diffs
 
-    def run(self, n_epochs: Union[int, None] = None):
+    def run(self, n_epochs: Union[int, None] = None) -> None:
         optimizer = self.config.OPTIMIZER(self.hedger.parameters(), lr=self.config.LR)
 
         if n_epochs is None:
@@ -116,7 +121,7 @@ class Trainer:
 
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=n_epochs)
 
-        train_losses, val_losses, weights, train_diffs, val_diffs = self._train(
+        _, _, self.weights, self.train_diffs, self.val_diffs = self._train(
             model=self.hedger,
             optimizer=optimizer,
             scheduler=scheduler,
@@ -126,4 +131,5 @@ class Trainer:
             print_logs=True
         )
 
-        return train_losses, val_losses, weights, train_diffs, val_diffs
+    def save(self, path: Path) -> None:
+        torch.save(self.hedger, path / f"run_{dt.datetime.now()}.pt")

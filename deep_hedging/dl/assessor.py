@@ -24,7 +24,7 @@ class Assessor:
 
         self.config = config
 
-    def assess(self) -> None:
+    def run(self) -> None:
         _, weights, _, model_diff = validation_epoch(self.model, nn.MSELoss(), self.test_loader)
         _, _, _, baseline_diff = validation_epoch(self.baseline, nn.MSELoss(), self.test_loader)
 

@@ -23,14 +23,9 @@ def get_pnl(spot: torch.Tensor, weights: torch.Tensor, dt: float) -> torch.float
     return (cash_outflow + cash_inflow + interest).unsqueeze(1)
 
 
-class NeuralHedger(nn.Module):
-    def __init__(self, input_size: int, num_layers: int, hidden_size: int, dt: float):
+class AbstractHedger(nn.Module):
+    def __init__(self):
         super().__init__()
-
-        self.input_size = input_size
-        self.num_layers = num_layers
-        self.hidden_size = hidden_size
-        self.dt = dt
 
     @abc.abstractmethod
     def forward(
