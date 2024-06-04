@@ -35,6 +35,7 @@ class ExperimentConfig:
         }
     )
 
+
     RANDOM_SEED: int = field(
         default=12,
         metadata={
@@ -88,6 +89,13 @@ class ExperimentConfig:
         default=20,
         metadata={
             "docs": "Number of training epochs"
+        }
+    )
+
+    N_STEPS_RL_TRAIN: int = field(
+        default=1_000_000,
+        metadata={
+            "docs": "Number of steps for training RL model"
         }
     )
 
