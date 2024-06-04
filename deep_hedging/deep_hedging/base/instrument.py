@@ -3,6 +3,7 @@ import abc
 import numpy as np
 
 from .position_side import PositionSide
+from .structured_note import StructuredNote
 
 
 class Instrument:
@@ -10,12 +11,6 @@ class Instrument:
 
     def __init__(self):
         pass
-
-    def bid(self, margin: float) -> float:
-        return self.price() - margin
-
-    def offer(self, margin: float) -> float:
-        return self.price() + margin
 
     @staticmethod
     def discount_factor(rate: float, term: float) -> float:
@@ -27,10 +22,6 @@ class Instrument:
 
     @abc.abstractmethod
     def pv_coupons(self) -> float:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def price(self, spot_start: [float, list[float], None] = None) -> float:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -49,41 +40,3 @@ class Instrument:
 
     def __sub__(self, other):
         return StructuredNote([(PositionSide.LONG, self), (PositionSide.SHORT, other)])
-
-
-class StructuredNote:
-    def __init__(self, instruments: [list[tuple[PositionSide, Instrument]], None] = None):
-        if instruments is not None:
-            self.instruments = instruments
-        else:
-            self.instruments = []
-
-    def bid(self, margin: float) -> float:
-        return self.price() - margin
-
-    def offer(self, margin: float) -> float:
-        return self.price() + margin
-
-    def coupon(self, frequency: float = 0., commission: float = 0., *args, **kwargs) -> float:
-        return sum([instrument.coupon(frequency, commission) for _, instrument in self.instruments])
-
-    def __add__(self, other: Instrument):
-        return self.instruments.append((PositionSide.LONG, other))
-
-    def __sub__(self, other: Instrument):
-        return self.instruments.append((PositionSide.SHORT, other))
-
-    def price(self) -> float:
-        return sum([side.value * instrument.price() + instrument.pv_coupons() for side, instrument in self.instruments])
-
-    def payoff(self, spot_paths: np.array) -> float:
-        return sum([side.value * instrument.payoff(spot_paths) for side, instrument in self.instruments])
-
-    def __repr__(self):
-        sp_str = f"StructuredNote of:\n"
-        for side, instrument in self.instruments:
-            sp_str += f"* {side} -> {instrument}\n"
-        return sp_str
-
-    def __str__(self):
-        return self.__repr__()

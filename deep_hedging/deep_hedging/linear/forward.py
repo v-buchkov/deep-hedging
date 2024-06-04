@@ -32,9 +32,6 @@ class Forward(Instrument):
     def strike(self) -> float:
         return self.get_strike()
 
-    def price(self, spot_start: [float, list[float], None] = None) -> float:
-        return 0
-
     def payoff(self, spot: [float, np.array]) -> float:
         return spot - self.strike
 
