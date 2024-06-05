@@ -16,12 +16,12 @@ from deep_hedging.config.experiment_config import ExperimentConfig
 
 class SpotDataset(Dataset):
     def __init__(
-            self,
-            n_days: int,
-            instrument_cls: Type[Instrument],
-            data: Union[pd.DataFrame, None] = None,
-            root_dir: Path = ExperimentConfig.DATA_ROOT,
-            filename: str = ExperimentConfig.DATA_FILENAME
+        self,
+        n_days: int,
+        instrument_cls: Type[Instrument],
+        data: Union[pd.DataFrame, None] = None,
+        root_dir: Path = ExperimentConfig.DATA_ROOT,
+        filename: str = ExperimentConfig.DATA_FILENAME,
     ):
         self.instrument_cls = instrument_cls
         self.n_days = n_days
@@ -45,42 +45,62 @@ class SpotDataset(Dataset):
     def _add_time_diff(df: pd.DataFrame) -> pd.DataFrame:
         df[GlobalConfig.TIME_DIFF_COLUMN] = df.index.to_series().diff()
 
-        df.loc[df.index[0], GlobalConfig.TIME_DIFF_COLUMN] = pd.to_timedelta("0 days 00:00:00")
+        df.loc[df.index[0], GlobalConfig.TIME_DIFF_COLUMN] = pd.to_timedelta(
+            "0 days 00:00:00"
+        )
 
-        day_delta = np.timedelta64(1, 'D') * GlobalConfig.CALENDAR_DAYS
-        df[GlobalConfig.TIME_DIFF_COLUMN] = df[GlobalConfig.TIME_DIFF_COLUMN].cumsum() / day_delta
+        day_delta = np.timedelta64(1, "D") * GlobalConfig.CALENDAR_DAYS
+        df[GlobalConfig.TIME_DIFF_COLUMN] = (
+            df[GlobalConfig.TIME_DIFF_COLUMN].cumsum() / day_delta
+        )
 
         return df
 
     def _create_instrument(self, period_df: pd.DataFrame) -> [Instrument, float]:
         start = period_df.loc[period_df.index.min()]
-        spot_start = (start[GlobalConfig.BID_COLUMN] + start[GlobalConfig.ASK_COLUMN]) / 2
-        return self.instrument_cls(
-            rates_difference=start[GlobalConfig.RATE_DOMESTIC_COLUMN] - start[GlobalConfig.RATE_FOREIGN_COLUMN],
-            spot_price=spot_start,
-            term=self.n_days / GlobalConfig.CALENDAR_DAYS
-        ), spot_start
+        spot_start = (
+            start[GlobalConfig.BID_COLUMN] + start[GlobalConfig.ASK_COLUMN]
+        ) / 2
+        return (
+            self.instrument_cls(
+                rates_difference=start[GlobalConfig.RATE_DOMESTIC_COLUMN]
+                - start[GlobalConfig.RATE_FOREIGN_COLUMN],
+                spot_price=spot_start,
+                term=self.n_days / GlobalConfig.CALENDAR_DAYS,
+            ),
+            spot_start,
+        )
 
     def __len__(self):
-        return len(self.df[self.df.index < self.df.index.max() - dt.timedelta(days=self.n_days)])
+        return len(
+            self.df[
+                self.df.index < self.df.index.max() - dt.timedelta(days=self.n_days)
+            ]
+        )
 
     def __getitem__(self, idx: int):
         start_date = self.df.index[idx]
         end_date = start_date + dt.timedelta(days=self.n_days)
 
-        features = self.df[(self.df.index >= start_date) & (self.df.index <= end_date)].copy()
+        features = self.df[
+            (self.df.index >= start_date) & (self.df.index <= end_date)
+        ].copy()
 
         # Calculate time till maturity
-        features[GlobalConfig.TIME_DIFF_COLUMN] = features.iloc[-1, -1] - features[GlobalConfig.TIME_DIFF_COLUMN]
+        features[GlobalConfig.TIME_DIFF_COLUMN] = (
+            features.iloc[-1, -1] - features[GlobalConfig.TIME_DIFF_COLUMN]
+        )
 
         instrument, spot_start = self._create_instrument(features)
         features[GlobalConfig.SPOT_START_COLUMN] = spot_start
 
         target = instrument.payoff(spot=features.ask.iloc[-1])
 
-        return torch.Tensor(features.to_numpy()).to(torch.float32), torch.Tensor([target]).to(torch.float32)
+        return torch.Tensor(features.to_numpy()).to(torch.float32), torch.Tensor(
+            [target]
+        ).to(torch.float32)
 
     @property
     def average_dt(self):
-        day_delta = np.timedelta64(1, 'D') * GlobalConfig.TRADING_DAYS
+        day_delta = np.timedelta64(1, "D") * GlobalConfig.TRADING_DAYS
         return self.df.index.to_series().diff(1).mean() / day_delta

@@ -14,14 +14,14 @@ from deep_hedging.config.global_config import GlobalConfig
 
 class ExoticOption(Instrument):
     def __init__(
-            self,
-            underlyings: MarketData,
-            yield_curve: YieldCurve,
-            strike_level: [float, list[float]],
-            start_date: dt.datetime,
-            end_date: dt.datetime,
-            *args,
-            **kwargs
+        self,
+        underlyings: MarketData,
+        yield_curve: YieldCurve,
+        strike_level: [float, list[float]],
+        start_date: dt.datetime,
+        end_date: dt.datetime,
+        *args,
+        **kwargs
     ):
         super().__init__()
 
@@ -31,7 +31,9 @@ class ExoticOption(Instrument):
         self.start_date = start_date
         self.end_date = end_date
 
-        self.time_till_maturity = (self.end_date - self.start_date).days / GlobalConfig.CALENDAR_DAYS
+        self.time_till_maturity = (
+            self.end_date - self.start_date
+        ).days / GlobalConfig.CALENDAR_DAYS
         self._price = None
 
         self._mc_pricer = MonteCarloPricer(self.payoff)
@@ -46,7 +48,9 @@ class ExoticOption(Instrument):
     def _dividends(self, term: float) -> np.array:
         return self.underlyings.get_dividends()
 
-    def delta(self, spot_change: float = 0.01, spot_start: [list[float], None] = None) -> np.array:
+    def delta(
+        self, spot_change: float = 0.01, spot_start: [list[float], None] = None
+    ) -> np.array:
         n_stocks = len(self.underlyings)
         spot_up = np.exp(spot_change)
         spot_down = np.exp(-spot_change)
@@ -68,7 +72,9 @@ class ExoticOption(Instrument):
 
         return np.array(delta)
 
-    def gamma(self, spot_change: float = .01, spot_start: [list[float], None] = None) -> np.array:
+    def gamma(
+        self, spot_change: float = 0.01, spot_start: [list[float], None] = None
+    ) -> np.array:
         n_stocks = len(self.underlyings)
         spot_up = np.exp(spot_change)
 
@@ -89,7 +95,9 @@ class ExoticOption(Instrument):
 
         return np.array(gamma)
 
-    def vega(self, vol_change: float = .01, spot_start: [list[float], None] = None) -> np.array:
+    def vega(
+        self, vol_change: float = 0.01, spot_start: [list[float], None] = None
+    ) -> np.array:
         n_stocks = len(self.underlyings)
         diagonal = np.diag(np.sqrt(np.diag(self.underlyings.get_var_covar())))
         corr = self.underlyings.get_corr()
@@ -102,19 +110,25 @@ class ExoticOption(Instrument):
             new_var_covar = diag @ corr @ diag
 
             future_value_new = self._mc_pricer.get_future_value(
-                current_spot=spot_start if spot_start is not None else [1.] * len(self.underlyings),
+                current_spot=spot_start
+                if spot_start is not None
+                else [1.0] * len(self.underlyings),
                 time_till_maturity=self.time_till_maturity,
                 risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
                 dividends_fn=self._dividends,
                 var_covar_fn=lambda term: new_var_covar,
             )
-            price_up = future_value_new * self.yield_curve.get_discount_factor(self.time_till_maturity)
+            price_up = future_value_new * self.yield_curve.get_discount_factor(
+                self.time_till_maturity
+            )
 
             vega.append((price_up - price_down) / vol_change)
 
         return np.array(vega)
 
-    def correlation_sensitivity(self, corr_change: float = .01, spot_start: [list[float], None] = None) -> np.array:
+    def correlation_sensitivity(
+        self, corr_change: float = 0.01, spot_start: [list[float], None] = None
+    ) -> np.array:
         n_stocks = len(self.underlyings)
         diagonal = np.diag(np.sqrt(np.diag(self.underlyings.get_var_covar())))
         correlation = self.underlyings.get_corr()
@@ -128,13 +142,17 @@ class ExoticOption(Instrument):
             new_var_covar = diagonal @ corr @ diagonal
 
             future_value_new = self._mc_pricer.get_future_value(
-                current_spot=spot_start if spot_start is not None else [1.] * len(self.underlyings),
+                current_spot=spot_start
+                if spot_start is not None
+                else [1.0] * len(self.underlyings),
                 time_till_maturity=self.time_till_maturity,
                 risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
                 dividends_fn=self._dividends,
                 var_covar_fn=lambda term: new_var_covar,
             )
-            price_up = future_value_new * self.yield_curve.get_discount_factor(self.time_till_maturity)
+            price_up = future_value_new * self.yield_curve.get_discount_factor(
+                self.time_till_maturity
+            )
 
             vega.append((price_up - price_down) / corr_change)
 
@@ -142,17 +160,23 @@ class ExoticOption(Instrument):
 
     def price(self, spot_start: [float, list[float], None] = None) -> float:
         future_value = self._mc_pricer.get_future_value(
-            current_spot=spot_start if spot_start is not None else [1.] * len(self.underlyings),
+            current_spot=spot_start
+            if spot_start is not None
+            else [1.0] * len(self.underlyings),
             time_till_maturity=self.time_till_maturity,
             risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
             dividends_fn=self._dividends,
             var_covar_fn=self._volatility_surface,
         )
-        return future_value * self.yield_curve.get_discount_factor(self.time_till_maturity)
+        return future_value * self.yield_curve.get_discount_factor(
+            self.time_till_maturity
+        )
 
     def get_paths(self, spot_start: [float, list[float], None] = None) -> np.array:
         return self._mc_pricer.get_paths(
-            current_spot=spot_start if spot_start is not None else [1.] * len(self.underlyings),
+            current_spot=spot_start
+            if spot_start is not None
+            else [1.0] * len(self.underlyings),
             time_till_maturity=self.time_till_maturity,
             risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
             dividends_fn=self._dividends,

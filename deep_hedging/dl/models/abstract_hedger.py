@@ -6,8 +6,14 @@ import torch.nn as nn
 
 def get_pnl(spot: torch.Tensor, weights: torch.Tensor, dt: float) -> torch.float32:
     model_device = spot.device
-    weights_all = torch.concat([torch.zeros(spot.shape[0], 1, requires_grad=False).to(model_device), weights,
-                                torch.zeros(spot.shape[0], 1, requires_grad=False).to(model_device)], dim=1)
+    weights_all = torch.concat(
+        [
+            torch.zeros(spot.shape[0], 1, requires_grad=False).to(model_device),
+            weights,
+            torch.zeros(spot.shape[0], 1, requires_grad=False).to(model_device),
+        ],
+        dim=1,
+    )
     weights_diff = weights_all.diff(n=1, dim=1)
 
     rates_diff = spot[:, :, 2] - spot[:, :, 3]
@@ -29,11 +35,11 @@ class AbstractHedger(nn.Module):
 
     @abc.abstractmethod
     def forward(
-            self,
-            spot: torch.Tensor,
-            text: [torch.Tensor, None] = None,
-            hidden: [torch.Tensor, (torch.Tensor, torch.Tensor), None] = None,
-            return_hidden: bool = False
+        self,
+        spot: torch.Tensor,
+        text: [torch.Tensor, None] = None,
+        hidden: [torch.Tensor, (torch.Tensor, torch.Tensor), None] = None,
+        return_hidden: bool = False,
     ) -> [torch.Tensor, (torch.Tensor, torch.Tensor, torch.Tensor)]:
         raise NotImplementedError
 

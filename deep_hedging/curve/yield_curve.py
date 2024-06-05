@@ -9,11 +9,7 @@ from deep_hedging.config.global_config import GlobalConfig
 
 class YieldCurve:
     def __init__(
-            self,
-            initial_terms: np.array,
-            create_curve_only: bool = False,
-            *args,
-            **kwargs
+        self, initial_terms: np.array, create_curve_only: bool = False, *args, **kwargs
     ) -> None:
         self._rates_df = None
         self._discount_factors = None
@@ -31,7 +27,9 @@ class YieldCurve:
         pass
 
     def create_curve(self, terms: list[float]) -> None:
-        self._rates_df = pd.DataFrame(self.get_rates(terms), index=terms, columns=[GlobalConfig.TARGET_COLUMN])
+        self._rates_df = pd.DataFrame(
+            self.get_rates(terms), index=terms, columns=[GlobalConfig.TARGET_COLUMN]
+        )
 
         if not self.create_curve_only:
             self._create_discount_factors()
@@ -40,9 +38,14 @@ class YieldCurve:
     def _create_discount_factors(self) -> pd.DataFrame:
         if self._rates_df is None:
             raise ValueError("Rate data is not fitted yet!")
-        discount_factors = np.exp(-self._rates_df[GlobalConfig.TARGET_COLUMN] * self._rates_df.index)
-        self._discount_factors = pd.DataFrame(discount_factors, index=self._rates_df.index,
-                                              columns=[GlobalConfig.DISCOUNT_FACTOR_COLUMN])
+        discount_factors = np.exp(
+            -self._rates_df[GlobalConfig.TARGET_COLUMN] * self._rates_df.index
+        )
+        self._discount_factors = pd.DataFrame(
+            discount_factors,
+            index=self._rates_df.index,
+            columns=[GlobalConfig.DISCOUNT_FACTOR_COLUMN],
+        )
         return self._discount_factors
 
     def _create_instant_fwd_rates(self) -> pd.DataFrame:
@@ -53,12 +56,26 @@ class YieldCurve:
         instant_fwd_rates = []
         for t in self._rates_df.index[1:]:
             dt = t - t_old
-            instant_fwd_rates.append(-1 / dt * (np.log(
-                self._discount_factors.loc[t, GlobalConfig.DISCOUNT_FACTOR_COLUMN] / self._discount_factors.loc[
-                    t_old, GlobalConfig.DISCOUNT_FACTOR_COLUMN])))
+            instant_fwd_rates.append(
+                -1
+                / dt
+                * (
+                    np.log(
+                        self._discount_factors.loc[
+                            t, GlobalConfig.DISCOUNT_FACTOR_COLUMN
+                        ]
+                        / self._discount_factors.loc[
+                            t_old, GlobalConfig.DISCOUNT_FACTOR_COLUMN
+                        ]
+                    )
+                )
+            )
             t_old = t
-        self._instant_fwd_rate = pd.DataFrame(instant_fwd_rates, index=self._rates_df.index[1:],
-                                              columns=[GlobalConfig.FWD_RATE_COLUMN])
+        self._instant_fwd_rate = pd.DataFrame(
+            instant_fwd_rates,
+            index=self._rates_df.index[1:],
+            columns=[GlobalConfig.FWD_RATE_COLUMN],
+        )
         return self._instant_fwd_rate
 
     @property

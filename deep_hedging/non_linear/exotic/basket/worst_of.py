@@ -10,20 +10,20 @@ from deep_hedging.utils.annuity import annuity_factor
 
 class WorstOfBarrierPut(ExoticOption):
     def __init__(
-            self,
-            underlyings: MarketData,
-            yield_curve: YieldCurve,
-            strike_level: float,
-            barrier_level: float,
-            start_date: dt.datetime,
-            end_date: dt.datetime
+        self,
+        underlyings: MarketData,
+        yield_curve: YieldCurve,
+        strike_level: float,
+        barrier_level: float,
+        start_date: dt.datetime,
+        end_date: dt.datetime,
     ):
         super().__init__(
             underlyings=underlyings,
             yield_curve=yield_curve,
             strike_level=strike_level,
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
         )
 
         self.barrier_level = barrier_level
@@ -31,12 +31,17 @@ class WorstOfBarrierPut(ExoticOption):
     def pv_coupons(self) -> float:
         return self.price()
 
-    def coupon(self, frequency: float = 0., commission: float = 0., *args, **kwargs) -> float:
+    def coupon(
+        self, frequency: float = 0.0, commission: float = 0.0, *args, **kwargs
+    ) -> float:
         if frequency > 0:
             annual_rate = self.yield_curve.get_rate(self.time_till_maturity)
-            return (self.pv_coupons() - commission) / annuity_factor(annual_rate=annual_rate, frequency=frequency,
-                                                                     till_maturity=self.time_till_maturity)
-        return 0.
+            return (self.pv_coupons() - commission) / annuity_factor(
+                annual_rate=annual_rate,
+                frequency=frequency,
+                till_maturity=self.time_till_maturity,
+            )
+        return 0.0
 
     def __repr__(self):
         instrument_str = f"WorstOfBarrierPut:\n"

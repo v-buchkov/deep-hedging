@@ -14,7 +14,7 @@ class Instrument:
         return np.exp(-rate * term)
 
     @abc.abstractmethod
-    def coupon(self, frequency: float = 0., *args, **kwargs) -> float:
+    def coupon(self, frequency: float = 0.0, *args, **kwargs) -> float:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -40,14 +40,23 @@ class Instrument:
 
 
 class StructuredNote:
-    def __init__(self, instruments: [list[tuple[PositionSide, Instrument]], None] = None):
+    def __init__(
+        self, instruments: [list[tuple[PositionSide, Instrument]], None] = None
+    ):
         if instruments is not None:
             self.instruments = instruments
         else:
             self.instruments = []
 
-    def coupon(self, frequency: float = 0., commission: float = 0., *args, **kwargs) -> float:
-        return sum([instrument.coupon(frequency, commission) for _, instrument in self.instruments])
+    def coupon(
+        self, frequency: float = 0.0, commission: float = 0.0, *args, **kwargs
+    ) -> float:
+        return sum(
+            [
+                instrument.coupon(frequency, commission)
+                for _, instrument in self.instruments
+            ]
+        )
 
     def __add__(self, other: Instrument):
         return self.instruments.append((PositionSide.LONG, other))
@@ -59,7 +68,12 @@ class StructuredNote:
     #     return sum([side.value * instrument.price() + instrument.pv_coupons() for side, instrument in self.instruments])
 
     def payoff(self, spot_paths: np.array) -> float:
-        return sum([side.value * instrument.payoff(spot_paths) for side, instrument in self.instruments])
+        return sum(
+            [
+                side.value * instrument.payoff(spot_paths)
+                for side, instrument in self.instruments
+            ]
+        )
 
     def __repr__(self):
         sp_str = f"StructuredNote of:\n"

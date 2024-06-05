@@ -5,21 +5,15 @@ from dataclasses import dataclass, field
 class GlobalConfig:
     #  Financial conventions
     TRADING_DAYS: int = field(
-        default=252,
-        metadata={
-            "docs": "Number of trading days in a year"
-        }
+        default=252, metadata={"docs": "Number of trading days in a year"}
     )
 
     CALENDAR_DAYS: int = field(
-        default=365,
-        metadata={
-            "docs": "Number of calendar days in a year"
-        }
+        default=365, metadata={"docs": "Number of calendar days in a year"}
     )
 
     YEARS_IN_CURVE: float = field(
-        default=25.,
+        default=25.0,
     )
 
     N_POINTS_CURVE: int = field(

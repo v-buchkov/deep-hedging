@@ -13,27 +13,33 @@ class LSTMHedger(AbstractHedger):
         self.hidden_size = hidden_size
         self.dt = dt
 
-        self.lstm = nn.LSTM(input_size, self.hidden_size, num_layers=num_layers, batch_first=True)
+        self.lstm = nn.LSTM(
+            input_size, self.hidden_size, num_layers=num_layers, batch_first=True
+        )
 
         self.hedging_weights = nn.Sequential(
             nn.Linear(self.hidden_size, self.hidden_size),
             nn.ReLU(),
             nn.Linear(self.hidden_size, self.hidden_size),
             nn.ReLU(),
-            nn.Linear(self.hidden_size, 1)
+            nn.Linear(self.hidden_size, 1),
         )
 
     def forward(
-            self,
-            spot: torch.Tensor,
-            text: [torch.Tensor, None] = None,
-            hidden: [torch.Tensor, (torch.Tensor, torch.Tensor), None] = None,
-            return_hidden: bool = False
+        self,
+        spot: torch.Tensor,
+        text: [torch.Tensor, None] = None,
+        hidden: [torch.Tensor, (torch.Tensor, torch.Tensor), None] = None,
+        return_hidden: bool = False,
     ) -> [torch.Tensor, (torch.Tensor, torch.Tensor, torch.Tensor)]:
         model_device = spot.device
         if hidden is None:
-            h_t = torch.zeros(self.num_layers, spot.size(0), self.hidden_size, dtype=torch.float32).to(model_device)
-            c_t = torch.zeros(self.num_layers, spot.size(0), self.hidden_size, dtype=torch.float32).to(model_device)
+            h_t = torch.zeros(
+                self.num_layers, spot.size(0), self.hidden_size, dtype=torch.float32
+            ).to(model_device)
+            c_t = torch.zeros(
+                self.num_layers, spot.size(0), self.hidden_size, dtype=torch.float32
+            ).to(model_device)
         elif len(hidden) != 2:
             raise ValueError(f"Expected two hidden state variables, got {len(hidden)}")
         else:

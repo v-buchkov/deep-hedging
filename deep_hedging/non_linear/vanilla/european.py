@@ -4,18 +4,13 @@ from deep_hedging.base import Instrument
 
 
 class EuropeanCall(Instrument):
-    def __init__(
-            self,
-            rates_difference: float,
-            spot_price: float,
-            term: float
-    ):
+    def __init__(self, rates_difference: float, spot_price: float, term: float):
         super().__init__()
         self.rates_difference = rates_difference
         self.spot_price = spot_price
         self.term = term
 
-    def coupon(self, frequency: float = 0., *args, **kwargs) -> float:
+    def coupon(self, frequency: float = 0.0, *args, **kwargs) -> float:
         return 0
 
     def pv_coupons(self) -> float:
@@ -32,7 +27,9 @@ class EuropeanCall(Instrument):
         if isinstance(spot, float):
             final_fixing = spot
         else:
-            assert spot.ndim == 1, f"You should pass exactly one spot path here, got {spot.ndim}-dim array"
+            assert (
+                spot.ndim == 1
+            ), f"You should pass exactly one spot path here, got {spot.ndim}-dim array"
             final_fixing = spot[-1]
         return max(final_fixing - self.strike, 0)
 
@@ -41,18 +38,13 @@ class EuropeanCall(Instrument):
 
 
 class EuropeanPut(Instrument):
-    def __init__(
-            self,
-            rates_difference: float,
-            spot_price: float,
-            term: float
-    ):
+    def __init__(self, rates_difference: float, spot_price: float, term: float):
         super().__init__()
         self.rates_difference = rates_difference
         self.spot_price = spot_price
         self.term = term
 
-    def coupon(self, frequency: float = 0., *args, **kwargs) -> float:
+    def coupon(self, frequency: float = 0.0, *args, **kwargs) -> float:
         return 0
 
     def pv_coupons(self) -> float:
@@ -69,7 +61,9 @@ class EuropeanPut(Instrument):
         if isinstance(spot, float):
             final_fixing = spot
         else:
-            assert spot.ndim == 1, f"You should pass exactly one spot path here, got {spot.ndim}-dim array"
+            assert (
+                spot.ndim == 1
+            ), f"You should pass exactly one spot path here, got {spot.ndim}-dim array"
             final_fixing = spot[-1]
         return max(self.strike - final_fixing, 0)
 

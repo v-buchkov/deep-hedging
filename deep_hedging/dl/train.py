@@ -9,29 +9,39 @@ from torch.utils.data import DataLoader
 from torch.cuda.amp import GradScaler
 
 
-def plot_losses(train_losses: list[float], val_losses: list[float], train_pnls: list[float], val_pnls: list[float]):
+def plot_losses(
+    train_losses: list[float],
+    val_losses: list[float],
+    train_pnls: list[float],
+    val_pnls: list[float],
+):
     clear_output()
     fig, axs = plt.subplots(1, 2, figsize=(13, 4))
-    axs[0].plot(range(1, len(train_losses) + 1), train_losses, label='train')
-    axs[0].plot(range(1, len(val_losses) + 1), val_losses, label='val')
-    axs[0].set_ylabel('loss')
+    axs[0].plot(range(1, len(train_losses) + 1), train_losses, label="train")
+    axs[0].plot(range(1, len(val_losses) + 1), val_losses, label="val")
+    axs[0].set_ylabel("loss")
 
-    axs[1].plot(range(1, len(train_pnls) + 1), train_pnls, label='train')
-    axs[1].plot(range(1, len(val_pnls) + 1), val_pnls, label='val')
-    axs[1].set_ylabel('PnL, RUB')
+    axs[1].plot(range(1, len(train_pnls) + 1), train_pnls, label="train")
+    axs[1].plot(range(1, len(val_pnls) + 1), val_pnls, label="val")
+    axs[1].set_ylabel("PnL, RUB")
 
     for ax in axs:
-        ax.set_xlabel('epoch')
+        ax.set_xlabel("epoch")
         ax.legend()
 
     plt.show()
 
 
-def train_epoch(model: nn.Module, optimizer: torch.optim.Optimizer, criterion: nn.Module,
-                loader: DataLoader, tqdm_desc: str = "Model"):
+def train_epoch(
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    criterion: nn.Module,
+    loader: DataLoader,
+    tqdm_desc: str = "Model",
+):
     device = next(model.parameters()).device
 
-    if device == torch.device('cuda'):
+    if device == torch.device("cuda"):
         has_cuda = True
     else:
         has_cuda = False
@@ -56,7 +66,7 @@ def train_epoch(model: nn.Module, optimizer: torch.optim.Optimizer, criterion: n
         target_pnl = target_pnl.to(device)
 
         if has_cuda:
-            with torch.autocast(device_type='cuda', dtype=torch.float16):
+            with torch.autocast(device_type="cuda", dtype=torch.float16):
                 weights, model_pnl = model.get_pnl(features)
                 loss = criterion(target_pnl, model_pnl)
 
@@ -86,8 +96,12 @@ def train_epoch(model: nn.Module, optimizer: torch.optim.Optimizer, criterion: n
 
 
 @torch.no_grad()
-def validation_epoch(model: nn.Module, criterion: nn.Module,
-                     loader: DataLoader, tqdm_desc: [str, None] = None):
+def validation_epoch(
+    model: nn.Module,
+    criterion: nn.Module,
+    loader: DataLoader,
+    tqdm_desc: [str, None] = None,
+):
     device = next(model.parameters()).device
 
     if tqdm_desc is None:
