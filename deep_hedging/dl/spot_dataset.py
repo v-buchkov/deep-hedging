@@ -79,6 +79,9 @@ class SpotDataset(Dataset):
         )
 
     def __getitem__(self, idx: int):
+        """
+        pehapse to slow and bad gpu utilization 
+        """
         start_date = self.df.index[idx]
         end_date = start_date + dt.timedelta(days=self.n_days)
 
