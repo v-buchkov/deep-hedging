@@ -2,7 +2,8 @@ from typing import Callable
 
 import numpy as np
 
-from .monte_carlo_pricer import MonteCarloPricer
+from deep_hedging.monte_carlo import MonteCarloPricer
+from deep_hedging.config import GlobalConfig
 
 
 class GBMPricer(MonteCarloPricer):
@@ -23,15 +24,15 @@ class GBMPricer(MonteCarloPricer):
         n_paths: [int, None] = None,
         random_seed: [int, None] = None,
     ) -> np.array:
-        days_till_maturity = int(round(self.TRADING_DAYS * time_till_maturity))
+        days_till_maturity = int(round(GlobalConfig.TRADING_DAYS * time_till_maturity))
 
         if n_paths is None:
-            n_paths = self.PATHS
+            n_paths = GlobalConfig.MONTE_CARLO_PATHS
 
         t = days_till_maturity
         n_stocks = len(current_spot)
 
-        time = np.linspace(0, t / self.TRADING_DAYS, t)
+        time = np.linspace(0, t / GlobalConfig.TRADING_DAYS, t)
         d_time = time[1] - time[0]
 
         drift = []

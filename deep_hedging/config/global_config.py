@@ -12,6 +12,11 @@ class GlobalConfig:
         default=365, metadata={"docs": "Number of calendar days in a year"}
     )
 
+    MONTE_CARLO_PATHS: int = field(
+        default=10_000,
+        metadata={"docs": "Default number of paths for Monte Carlo Simulation"},
+    )
+
     YEARS_IN_CURVE: float = field(
         default=25.0,
     )
