@@ -52,7 +52,10 @@ class LSTMHedger(AbstractHedger):
 
         shape = spot.shape
         # spot = self.norm(spot.reshape(shape[1] * shape[0], shape[2])).reshape(shape)
-        spot = torch.log(spot / spot[:, 0, :].unsqueeze(1))
+
+        price = torch.log(spot[:, :, :2] / spot[:, 0, :2].unsqueeze(1))
+        rates = spot[:, :, 2:4] - spot[:, 0, 2:4].unsqueeze(1)
+        spot = torch.cat([price, rates, spot[:, :, 4:], hidden], dim=2)
 
         h_t, c_t = self.lstm(spot, (h_t, c_t))
         outputs = self.hedging_weights(h_t)[:, :-2, :].squeeze(2)
