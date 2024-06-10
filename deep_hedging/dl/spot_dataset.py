@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 from deep_hedging.base import Instrument
 from deep_hedging.config.global_config import GlobalConfig
@@ -20,13 +20,12 @@ class SpotDataset(Dataset):
         n_days: int,
         instrument_cls: Type[Instrument],
         data: Union[pd.DataFrame, None] = None,
-        root_dir: Path = ExperimentConfig.DATA_ROOT,
-        filename: str = ExperimentConfig.DATA_FILENAME,
+        config: ExperimentConfig = ExperimentConfig()
     ):
         self.instrument_cls = instrument_cls
         self.n_days = n_days
 
-        self.df = self._create_df(root_dir, filename) if data is None else data.copy()
+        self.df = self._create_df(config.DATA_ROOT, config.DATA_FILENAME) if data is None else data.copy()
         self.df = self._add_time_diff(self.df)
 
         self.df = self.df.ffill()
