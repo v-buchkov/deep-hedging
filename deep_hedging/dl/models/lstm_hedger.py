@@ -5,13 +5,18 @@ from .abstract_hedger import AbstractHedger
 
 
 class LSTMHedger(AbstractHedger):
-    def __init__(self, input_size: int, num_layers: int, hidden_size: int, dt: float):
+    def __init__(self, input_size: int, num_layers: int, hidden_size: int, dt: float, layer_norm: bool = False):
         super().__init__()
 
         self.input_size = input_size
         self.num_layers = num_layers
         self.hidden_size = hidden_size
         self.dt = dt
+
+        if layer_norm:
+            self.norm = nn.LayerNorm(self.input_size)
+        else:
+            self.norm = nn.BatchNorm1d(self.input_size)
 
         self.lstm = nn.LSTM(
             input_size, self.hidden_size, num_layers=num_layers, batch_first=True
@@ -44,6 +49,9 @@ class LSTMHedger(AbstractHedger):
             raise ValueError(f"Expected two hidden state variables, got {len(hidden)}")
         else:
             h_t, c_t = hidden
+
+        shape = spot.shape
+        spot = self.norm(spot.reshape(shape[0], shape[2], shape[1])).reshape(shape[0], shape[1], shape[2])
 
         h_t, c_t = self.lstm(spot, (h_t, c_t))
         outputs = self.hedging_weights(h_t)[:, :-2, :].squeeze(2)

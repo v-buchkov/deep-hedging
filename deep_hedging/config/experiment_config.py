@@ -36,8 +36,8 @@ class ExperimentConfig:
 
     DATA_FILENAME: str = field(default="data_full", metadata={"docs": "Data filename"})
 
-    NORMALIZE: bool = field(
-        default=False, metadata={"docs": "Boolean, whether to normalize the data"}
+    LAYER_NORM: bool = field(
+        default=False, metadata={"docs": "Boolean, whether to normalize the data by LayerNorm of BatchNorm"}
     )
 
     USE_TIME_DIFF: bool = field(

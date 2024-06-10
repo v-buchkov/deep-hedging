@@ -45,6 +45,7 @@ class Trainer:
             num_layers=self.config.NUM_LAYERS,
             hidden_size=self.config.HIDDEN_DIM,
             dt=self.dt,
+            layer_norm=self.config.LAYER_NORM,
         )
         self.hedger = self.hedger.to(self.config.DEVICE)
 
