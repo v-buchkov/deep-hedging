@@ -46,8 +46,8 @@ class Assessor:
             f"Stds: model = {model_diff.std():.6f}, baseline = {baseline_diff.std():.6f}"
         )
 
-        var_model = np.abs(np.quantile(model_diff, self.config.VAR_QUANTILE))
-        var_baseline = np.abs(np.quantile(baseline_diff, 0.05))
+        var_model = -np.quantile(model_diff, self.config.VAR_QUANTILE)
+        var_baseline = -np.quantile(baseline_diff, 0.05)
         print(f"VaRs 5%: model = {var_model:.6f}, baseline = {var_baseline:.6f}")
 
         t_value = (model_diff.mean() - baseline_diff.mean()) / np.sqrt(
