@@ -5,7 +5,14 @@ from deep_hedging.dl.models.abstract_hedger import AbstractHedger
 
 
 class LSTMHedger(AbstractHedger):
-    def __init__(self, input_size: int, num_layers: int, hidden_size: int, dt: float, layer_norm: bool = False):
+    def __init__(
+        self,
+        input_size: int,
+        num_layers: int,
+        hidden_size: int,
+        dt: float,
+        layer_norm: bool = False,
+    ):
         super().__init__()
 
         self.input_size = input_size

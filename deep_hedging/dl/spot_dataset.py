@@ -20,12 +20,16 @@ class SpotDataset(Dataset):
         n_days: int,
         instrument_cls: Type[Instrument],
         data: Union[pd.DataFrame, None] = None,
-        config: ExperimentConfig = ExperimentConfig()
+        config: ExperimentConfig = ExperimentConfig(),
     ):
         self.instrument_cls = instrument_cls
         self.n_days = n_days
 
-        self.df = self._create_df(config.DATA_ROOT, config.DATA_FILENAME) if data is None else data.copy()
+        self.df = (
+            self._create_df(config.DATA_ROOT, config.DATA_FILENAME)
+            if data is None
+            else data.copy()
+        )
         self.df = self._add_time_diff(self.df)
 
         self.df = self.df.ffill()
