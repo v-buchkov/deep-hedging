@@ -46,6 +46,18 @@ class GlobalConfig:
         default="time_diff",
     )
 
+    TEXT_COLUMN: str = field(
+        default="text",
+    )
+
+    LEMMAS_COLUMN: str = field(
+        default="lemmas",
+    )
+
+    EMBEDDING_COLUMN: str = field(
+        default="embed",
+    )
+
     SPOT_START_COLUMN: str = field(
         default="spot_start",
     )

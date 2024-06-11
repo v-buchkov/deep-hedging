@@ -66,6 +66,10 @@ class ExperimentConfig:
 
     HIDDEN_DIM: int = field(default=32, metadata={"docs": "Size of hidden layers"})
 
+    EMBED_MAX_DIM: int = field(
+        default=128,
+    )
+
     OPTIMIZER: Type[torch.optim.Optimizer] = field(
         default=torch.optim.Adam, metadata={"docs": "Optimizer to use in learning"}
     )
