@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 
 from deep_hedging.dl.models.abstract_hedger import AbstractHedger
+from deep_hedging.config.global_config import GlobalConfig
 
 
 class LSTMHedger(AbstractHedger):
@@ -60,7 +61,7 @@ class LSTMHedger(AbstractHedger):
         mid = (spot[:, :, 0] + spot[:, :, 1]) / 2
         bid_ask_spread = (spot[:, :, 1] - spot[:, :, 0]).unsqueeze(2)
 
-        mid = torch.log(mid[:, :] / mid[:, 0].unsqueeze(1)).unsqueeze(2)
+        mid = torch.log(mid[:, :] / mid[:, 0].unsqueeze(1)).unsqueeze(2) * GlobalConfig.TRADING_DAYS
 
         rates = spot[:, :, 2:4] - spot[:, 0, 2:4].unsqueeze(1)
         spot = torch.cat([mid, bid_ask_spread, rates, spot[:, :, 4:]], dim=2)
