@@ -4,8 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
-from .train import validation_epoch
-
+from deep_hedging.dl.train import validation_epoch
 from deep_hedging.config import ExperimentConfig
 
 

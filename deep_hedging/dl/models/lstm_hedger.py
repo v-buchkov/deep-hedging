@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .abstract_hedger import AbstractHedger
+from deep_hedging.dl.models.abstract_hedger import AbstractHedger
 
 
 class LSTMHedger(AbstractHedger):
@@ -53,8 +53,8 @@ class LSTMHedger(AbstractHedger):
         shape = spot.shape
         # spot = self.norm(spot.reshape(shape[1] * shape[0], shape[2])).reshape(shape)
 
-        price = torch.log(spot[:, :, :2] / spot[:, 0, :2].unsqueeze(1))
-        rates = spot[:, :, 2:4] - spot[:, 0, 2:4].unsqueeze(1)
+        price = torch.log(torch.div(spot[:, :, :2], spot[:, 0, :2]))
+        rates = torch.subtract(spot[:, :, 2:4], spot[:, 0, 2:4])
         spot = torch.cat([price, rates, spot[:, :, 4:]], dim=2)
 
         h_t, c_t = self.lstm(spot, (h_t, c_t))

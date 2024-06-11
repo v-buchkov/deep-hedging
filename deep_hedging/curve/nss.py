@@ -1,7 +1,6 @@
-from .yield_curve import YieldCurve
-
 import numpy as np
 
+from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.config.global_config import GlobalConfig
 
 

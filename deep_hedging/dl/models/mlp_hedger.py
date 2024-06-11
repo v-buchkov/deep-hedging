@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from .abstract_hedger import AbstractHedger
+from deep_hedging.dl.models.abstract_hedger import AbstractHedger
 
 
 class MLPHedger(AbstractHedger):

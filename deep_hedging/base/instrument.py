@@ -2,7 +2,7 @@ import abc
 
 import numpy as np
 
-from .position_side import PositionSide
+from deep_hedging.base.position_side import PositionSide
 
 
 class Instrument:
