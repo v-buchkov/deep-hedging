@@ -1,1 +1,1 @@
-from nss import NelsonSiegelCurve
+from .nss import NelsonSiegelCurve
