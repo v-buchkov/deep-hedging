@@ -21,13 +21,13 @@ setup(
         'deep_hedging/rl',
         'deep_hedging/utils'
     ],
-    version='1.0',
+    version='1.1',
     license='MIT',
     description='Hedging Derivatives Under Incomplete Markets with Deep Learning',
     author='Viacheslav Buchkov',
     author_email='viacheslav.buchkov@gmail.com',
     url='https://github.com/v-buchkov/deep-hedging',
-    download_url='https://github.com/v-buchkov/deep-hedging/archive/refs/tags/v1_0.tar.gz',
+    download_url='https://github.com/v-buchkov/deep-hedging/archive/refs/tags/v1.1.tar.gz',
     keywords=['deep hedging', 'derivatives', 'hedging', 'deep learning', 'reinforcement learning'],
     install_requires=[
         'numpy',
