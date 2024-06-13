@@ -7,7 +7,7 @@ Information Technologies
 Faculty of Computer Science
 NRU Higher School of Economics
 
-## MSc Thesis: “Application of Deep Hedging Techniques for Exotic FX Options at Moscow Exchange”
+## MSc Thesis: “Hedging Derivatives Under Incomplete Markets with Deep Learning”
 
 **Research Task**: create an universal algorithm that would produce for each point of time weights vector for replicating portfolio assets to dynamically delta-hedge a derivative, defined by payoff function only. The algorithm should take into account “state-of-the-world” embedding, historical dynamics of underlying asset and parameters of a derivative (like time till maturity for each point in time). The target function for optimization would be to minimize difference between derivative’s PnL and replicating portfolio’s PnL.
 Potentially, approach might be adjusted to fit Reinforcement Learning framework.
