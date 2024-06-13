@@ -1,6 +1,6 @@
-from .spot_dataset import SpotDataset
-from .spot_dataset_texts import SpotDatasetTexts
-from .models import MLPHedger, LSTMHedger, LSTMHedgerTexts
-from .assessor import Assessor
-from .trainer import Trainer
-from .trainer_texts import TrainerTexts
+from deep_hedging.dl.spot_dataset import SpotDataset
+from deep_hedging.dl.spot_dataset_texts import SpotDatasetTexts
+from deep_hedging.dl.models import MLPHedger, LSTMHedger, LSTMHedgerTexts
+from deep_hedging.dl.assessor import Assessor
+from deep_hedging.dl.trainer import Trainer
+from deep_hedging.dl.trainer_texts import TrainerTexts

@@ -1,2 +1,2 @@
-from .instrument import Instrument, StructuredNote
-from .position_side import PositionSide
+from deep_hedging.base.instrument import Instrument, StructuredNote
+from deep_hedging.base.position_side import PositionSide

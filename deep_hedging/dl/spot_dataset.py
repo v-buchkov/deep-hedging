@@ -23,7 +23,7 @@ class SpotDataset(Dataset):
         config: ExperimentConfig = ExperimentConfig(),
     ):
         self.instrument_cls = instrument_cls
-        self.n_days = n_days
+        self.n_days = 2 * n_days
 
         self.df = (
             self._create_df(config.DATA_ROOT, config.DATA_FILENAME)

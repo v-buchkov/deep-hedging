@@ -1,1 +1,1 @@
-from .risk_free_bond import RiskFreeBond
+from deep_hedging.fixed_income.risk_free_bond import RiskFreeBond

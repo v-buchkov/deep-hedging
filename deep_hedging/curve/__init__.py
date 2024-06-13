@@ -1,1 +1,1 @@
-from .nss import NelsonSiegelCurve
+from deep_hedging.curve.nss import NelsonSiegelCurve
