@@ -23,15 +23,8 @@ class EuropeanCall(Instrument):
     def strike(self) -> float:
         return self.get_strike()
 
-    def payoff(self, spot: [float, np.array]) -> float:
-        if isinstance(spot, float):
-            final_fixing = spot
-        else:
-            assert (
-                spot.ndim == 1
-            ), f"You should pass exactly one spot path here, got {spot.ndim}-dim array"
-            final_fixing = spot[-1]
-        return max(final_fixing - self.strike, 0)
+    def payoff(self, spot: float) -> float:
+        return max(spot - self.strike, 0)
 
     def __repr__(self):
         return f"EuropeanCall(strike={self.strike}, term={self.term}, spot_ref={self.spot_price})"

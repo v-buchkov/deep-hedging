@@ -1,1 +1,1 @@
-from .forward import Forward
+from deep_hedging.linear.forward import Forward
