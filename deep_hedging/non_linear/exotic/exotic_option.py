@@ -8,7 +8,6 @@ from deep_hedging.base.instrument import Instrument
 from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.market_data.market_data import MarketData
 from deep_hedging.monte_carlo.monte_carlo_pricer import MonteCarloPricer
-
 from deep_hedging.config.global_config import GlobalConfig
 
 

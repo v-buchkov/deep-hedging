@@ -5,7 +5,6 @@ import numpy as np
 from deep_hedging.base.instrument import Instrument
 from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.utils.annuity import annuity_factor
-
 from deep_hedging.config.global_config import GlobalConfig
 
 

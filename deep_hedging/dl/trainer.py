@@ -9,11 +9,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from .spot_dataset import SpotDataset
-
+from deep_hedging.dl.spot_dataset import SpotDataset
 from deep_hedging.base import Instrument
 from deep_hedging.config import ExperimentConfig
-from .train import train_epoch, validation_epoch, plot_losses
+from deep_hedging.dl.train import train_epoch, validation_epoch, plot_losses
 
 
 class Trainer:

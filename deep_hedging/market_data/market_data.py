@@ -6,7 +6,7 @@ import numpy as np
 import pandas_datareader.data as reader
 import yfinance as yfin
 
-from .tickers import Tickers
+from deep_hedging.market_data.tickers import Tickers
 from deep_hedging.config.global_config import GlobalConfig
 
 yfin.pdr_override()

@@ -1,4 +1,4 @@
-from .ticker import Ticker
+from deep_hedging.market_data.ticker import Ticker
 
 
 class Tickers:
