@@ -58,7 +58,7 @@ class LSTMHedger(AbstractHedger):
             h_t, c_t = hidden
 
         mid = (spot[:, :, 0] + spot[:, :, 1]) / 2
-        mid = torch.log(mid / mid[:, 0, :].unsqueeze(1)).unsqueeze(2)
+        mid = torch.log(mid / mid[:, 0].unsqueeze(1)).unsqueeze(2)
 
         bid_ask_spread = (spot[:, :, 1] - spot[:, :, 0]).unsqueeze(2)
         rates = spot[:, :, 2:4]
