@@ -31,7 +31,7 @@ config = ExperimentConfig(
     DATA_ROOT=...,
     OUTPUT_ROOT=...,
     DATA_FILENAME=...,
-    REBAL_FREQ = "5 min"
+    REBAL_FREQ="5 min"
 )
 
 # Train Hedger for 1 epoch
