@@ -7,7 +7,50 @@ Information Technologies
 Faculty of Computer Science
 NRU Higher School of Economics
 
-## MSc Thesis: “Hedging Derivatives Under Incomplete Markets with Deep Learning”
+# MSc Thesis: “Hedging Derivatives Under Incomplete Markets with Deep Learning”
+
+## Install
+
+```
+pip install deep_hedging
+```
+
+## Usage Example
+
+```
+from pathlib import Path
+
+from deep_hedging import ExperimentConfig, EuropeanCall, seed_everything
+
+from deep_hedging.dl import Trainer, Assessor
+from deep_hedging.dl.models import LSTMHedger
+from deep_hedging.dl.baselines import BaselineEuropeanCall
+
+# Amend config
+config = ExperimentConfig(
+    DATA_ROOT=...,
+    OUTPUT_ROOT=...,
+    DATA_FILENAME=...,
+    REBAL_FREQ = "5 min"
+)
+
+# Train Hedger for 1 epoch
+trainer = Trainer(model_cls=LSTMHedger, instrument_cls=EuropeanCall, config=config)
+trainer.run(1)
+
+# Assess obtained quality
+assessor = Assessor(
+    model=trainer.hedger,
+    baseline=BaselineEuropeanCall(dt=trainer.dt).to(config.DEVICE),
+    test_loader=trainer.test_loader,
+)
+assessor.run()
+
+# Save model
+trainer.save(config.OUTPUT_ROOT)
+```
+
+## Description of Research Tasks
 
 **Research Task**: create an universal algorithm that would produce for each point of time weights vector for replicating portfolio assets to dynamically delta-hedge a derivative, defined by payoff function only. The algorithm should take into account “state-of-the-world” embedding, historical dynamics of underlying asset and parameters of a derivative (like time till maturity for each point in time). The target function for optimization would be to minimize difference between derivative’s PnL and replicating portfolio’s PnL.
 Potentially, approach might be adjusted to fit Reinforcement Learning framework.
