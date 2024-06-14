@@ -12,7 +12,7 @@ NRU Higher School of Economics
 pip install deep_hedging
 ```
 
-## Usage Example
+## Deep Learning Example
 
 ```
 from pathlib import Path
@@ -45,6 +45,43 @@ assessor.run()
 
 # Save model
 trainer.save(config.OUTPUT_ROOT)
+```
+
+
+## Reinforcement Learning Example
+
+```
+from pathlib import Path
+
+from deep_hedging import ExperimentConfig, EuropeanCall, seed_everything
+from deep_hedging.rl import DerivativeEnvStep, RLTrainer
+
+from sb3_contrib import RecurrentPPO
+from stable_baselines3 import SAC, PPO
+
+# Amend config
+config = ExperimentConfig(
+    DATA_ROOT=Path(...),
+    OUTPUT_ROOT=Path(...),
+    DATA_FILENAME="...",
+    REBAL_FREQ="5 min"
+)
+
+# Create environment
+env = DerivativeEnvStep(n_days=config.N_DAYS, instrument_cls=EuropeanCall)
+env.reset()
+
+# Train Hedger for 1_000 steps
+trainer = RLTrainer(
+    model=RecurrentPPO("MlpLstmPolicy", env, verbose=1),
+    instrument_cls=EuropeanCall,
+    environment_cls=DerivativeEnvStep,
+    config=config,
+)
+trainer.learn(1_000)
+
+# Assess obtained quality at 100 steps
+trainer.assess(100)
 ```
 
 ## Description of Research Tasks
