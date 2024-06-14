@@ -47,6 +47,43 @@ assessor.run()
 trainer.save(config.OUTPUT_ROOT)
 ```
 
+## Custom Derivative Example
+
+```
+from pathlib import Path
+
+from deep_hedging import ExperimentConfig, Instrument
+
+from deep_hedging.dl import Trainer, Assessor
+from deep_hedging.dl.models import LSTMHedger
+from deep_hedging.dl.baselines import BaselineEuropeanCall
+
+# Amend config
+config = ExperimentConfig(
+    DATA_ROOT=Path(...),
+    OUTPUT_ROOT=Path(...),
+    DATA_FILENAME="...",
+    REBAL_FREQ="5 min"
+)
+
+# Create custom derivative
+class CustomDerivative(Instrument):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+
+    def payoff(self, spot: float) -> float:
+        return ... # any payoff you want - e.g., spot ** 12 - 12 * np.random.randint(12, 121)
+
+    def __repr__(self):
+        return f"SomeCustomDerivative(param1=..., param2=...)"
+
+# Train Hedger for 1 epoch
+trainer = Trainer(model_cls=LSTMHedger, instrument_cls=CustomDerivative, config=config)
+trainer.run(1)
+
+# Save model
+trainer.save(config.OUTPUT_ROOT)
+```
 
 ## Reinforcement Learning Example
 
