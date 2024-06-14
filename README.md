@@ -1,4 +1,4 @@
-# deep-hedging
+# MSc Thesis: “Hedging Derivatives Under Incomplete Markets with Deep Learning”
 Masters Thesis Repository
 
 _Buchkov Viacheslav_
@@ -6,8 +6,6 @@ MSc in Applied Mathematics and
 Information Technologies
 Faculty of Computer Science
 NRU Higher School of Economics
-
-# MSc Thesis: “Hedging Derivatives Under Incomplete Markets with Deep Learning”
 
 ## Install
 
