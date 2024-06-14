@@ -1,8 +1,9 @@
 # MSc Thesis: “Hedging Derivatives Under Incomplete Markets with Deep Learning”
 _Buchkov Viacheslav_\
 MSc in Applied Mathematics and 
-Information Technologies
-Faculty of Computer Science
+Informatics\
+Machine Learning and Data-Intensive Systems\
+Faculty of Computer Science\
 NRU Higher School of Economics
 
 ## Install
