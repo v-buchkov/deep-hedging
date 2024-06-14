@@ -17,7 +17,7 @@ pip install deep_hedging
 ```
 from pathlib import Path
 
-from deep_hedging import ExperimentConfig, EuropeanCall, seed_everything
+from deep_hedging import ExperimentConfig, EuropeanCall
 
 from deep_hedging.dl import Trainer, Assessor
 from deep_hedging.dl.models import LSTMHedger
@@ -25,9 +25,9 @@ from deep_hedging.dl.baselines import BaselineEuropeanCall
 
 # Amend config
 config = ExperimentConfig(
-    DATA_ROOT=...,
-    OUTPUT_ROOT=...,
-    DATA_FILENAME=...,
+    DATA_ROOT=Path(...),
+    OUTPUT_ROOT=Path(...),
+    DATA_FILENAME="...",
     REBAL_FREQ="5 min"
 )
 
