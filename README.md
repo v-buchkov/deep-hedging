@@ -1,5 +1,5 @@
 # MSc Thesis: “Hedging Derivatives Under Incomplete Markets with Deep Learning”
-_Buchkov Viacheslav_
+_Buchkov Viacheslav_\
 MSc in Applied Mathematics and 
 Information Technologies
 Faculty of Computer Science
