@@ -1,8 +1,8 @@
 from deep_hedging.config import ExperimentConfig
 from deep_hedging.utils import seed_everything
 
+from deep_hedging.base.instrument import Instrument
 from deep_hedging.fixed_income import RiskFreeBond
-
 from deep_hedging.linear import Forward
 from deep_hedging.non_linear import EuropeanCall, EuropeanPut, WorstOfBarrierPut
 
