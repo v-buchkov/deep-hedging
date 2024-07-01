@@ -1,9 +1,9 @@
 import numpy as np
 
-from deep_hedging.base import Instrument
+from deep_hedging.non_linear.base_option import BaseOption
 
 
-class EuropeanCall(Instrument):
+class EuropeanCall(BaseOption):
     def __init__(self, rates_difference: float, spot_price: float, term: float):
         super().__init__()
         self.rates_difference = rates_difference

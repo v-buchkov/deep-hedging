@@ -2,6 +2,7 @@ import datetime as dt
 from functools import lru_cache
 
 import numpy as np
+import pandas as pd
 
 import pandas_datareader.data as reader
 import yfinance as yfin
@@ -12,7 +13,7 @@ from deep_hedging.config.global_config import GlobalConfig
 yfin.pdr_override()
 
 
-class MarketData:
+class Underlyings:
     TARGET_COLUMN = "Adj Close"
 
     def __init__(
@@ -21,8 +22,12 @@ class MarketData:
         start: dt.datetime,
         end: dt.datetime,
         sampling_period: str = "D",
+        data: [pd.DataFrame, None] = None,
+        dividends: [np.array, None] = None,
     ):
-        self.df = None
+        self.data = data
+        self.dividends = dividends
+
         self.sampling_period = sampling_period
 
         self.tickers = tickers
@@ -36,18 +41,19 @@ class MarketData:
         return len(self.tickers)
 
     def _load_yahoo(self) -> None:
-        self.df = reader.get_data_yahoo(self.tickers.codes, self.start, self.end)[
+        self.data = reader.get_data_yahoo(self.tickers.codes, self.start, self.end)[
             self.TARGET_COLUMN
         ]
 
     def _resample_data(self) -> None:
-        if self.df is None:
+        if self.data is None:
             self._load_yahoo()
-        self.df = self.df.resample(self.sampling_period).first().dropna(axis=0)
-        self._df_returns = self.df.pct_change(fill_method=None).dropna(axis=0)
+        self.data = self.data.resample(self.sampling_period).first().dropna(axis=0)
+        self._df_returns = self.data.pct_change(fill_method=None).dropna(axis=0)
 
     def _initialize(self) -> None:
-        self._load_yahoo()
+        if self.data is None:
+            self._load_yahoo()
         self._resample_data()
 
     def plot(self) -> None:
@@ -60,7 +66,7 @@ class MarketData:
             .hist(
                 column="return",
                 by="Ticker",
-                range=[self.df.min().min(), self.df.max().max()],
+                range=[self.data.min().min(), self.data.max().max()],
                 bins=100,
                 grid=False,
                 figsize=(16, 16),
@@ -97,7 +103,7 @@ class MarketData:
                 size=16,
             )
 
-            x.set_title(f"{self.tickers[self.df.columns[i]]}", size=12)
+            x.set_title(f"{self.tickers[self.data.columns[i]]}", size=12)
 
             if i == n_stocks // 2:
                 x.set_ylabel("Frequency", labelpad=50, weight="bold", size=12)
@@ -106,12 +112,12 @@ class MarketData:
 
     def __getitem__(self, item: [int, str], *args, **kwargs):
         if isinstance(item, int):
-            return self.df.iloc[:, item].values
+            return self.data.iloc[:, item].values
         elif isinstance(item, str):
-            if item in self.df.columns:
-                return self.df.loc[:, item].values
+            if item in self.data.columns:
+                return self.data.loc[:, item].values
             else:
-                return self.df.loc[:, self.tickers[item]].values
+                return self.data.loc[:, self.tickers[item]].values
         else:
             raise TypeError(f"Item {item} is not a valid ticker or index")
 
@@ -126,9 +132,10 @@ class MarketData:
 
     @lru_cache(maxsize=None)
     def get_dividends(self) -> np.array:
-        return np.array(
-            [
-                yfin.Ticker(ticker).dividends.iloc[-1] / 100
-                for ticker in self.tickers.codes
-            ]
-        )
+        if self.dividends is None:
+            return np.array(
+                [
+                    yfin.Ticker(ticker).dividends.iloc[-1] / 100
+                    for ticker in self.tickers.codes
+                ]
+            )
