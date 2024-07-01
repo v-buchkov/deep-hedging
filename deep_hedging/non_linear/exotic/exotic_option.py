@@ -9,6 +9,7 @@ from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.market_data.market_data import MarketData
 from deep_hedging.monte_carlo.monte_carlo_pricer import MonteCarloPricer
 from deep_hedging.config.global_config import GlobalConfig
+from deep_hedging.utils import annuity_factor
 
 
 class ExoticOption(Instrument):
@@ -20,7 +21,7 @@ class ExoticOption(Instrument):
         start_date: dt.datetime,
         end_date: dt.datetime,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
 
@@ -39,7 +40,7 @@ class ExoticOption(Instrument):
 
     # TODO: non-constant term
     @lru_cache(maxsize=None)
-    def _volatility_surface(self, term: float) -> np.array:
+    def volatility_surface(self, term: float) -> np.array:
         return self.underlyings.get_var_covar()
 
     # TODO: non-constant term
@@ -51,7 +52,7 @@ class ExoticOption(Instrument):
         return self.price()
 
     def coupon(
-            self, frequency: float = 0.0, commission: float = 0.0, *args, **kwargs
+        self, frequency: float = 0.0, commission: float = 0.0, *args, **kwargs
     ) -> float:
         if frequency > 0:
             annual_rate = self.yield_curve.get_rate(self.time_till_maturity)
@@ -87,7 +88,7 @@ class ExoticOption(Instrument):
         return np.array(delta)
 
     def gamma(
-            self, spot_change: float = 0.005, spot_start: [list[float], None] = None
+        self, spot_change: float = 0.005, spot_start: [list[float], None] = None
     ) -> np.array:
         n_stocks = len(self.underlyings)
         spot_up = np.exp(spot_change)
@@ -181,7 +182,7 @@ class ExoticOption(Instrument):
             time_till_maturity=self.time_till_maturity,
             risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
             dividends_fn=self._dividends,
-            var_covar_fn=self._volatility_surface,
+            var_covar_fn=self.volatility_surface,
         )
         return future_value * self.yield_curve.get_discount_factor(
             self.time_till_maturity
@@ -195,7 +196,7 @@ class ExoticOption(Instrument):
             time_till_maturity=self.time_till_maturity,
             risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
             dividends_fn=self._dividends,
-            var_covar_fn=self._volatility_surface,
+            var_covar_fn=self.volatility_surface,
         )
 
     def __repr__(self):
