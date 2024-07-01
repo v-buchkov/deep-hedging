@@ -4,17 +4,17 @@ import datetime as dt
 import numpy as np
 
 from deep_hedging.non_linear.base_option import BaseOption
-from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.market_data.underlyings import Underlyings
+from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.monte_carlo.monte_carlo_pricer import MonteCarloPricer
 
 
-class ExoticOption(BaseOption):
+class MonteCarloOption(BaseOption):
     def __init__(
         self,
         underlyings: Underlyings,
         yield_curve: YieldCurve,
-        strike_level: [float, list[float]],
+        strike_level: [float, np.array],
         start_date: dt.datetime,
         end_date: dt.datetime,
         *args,
@@ -25,13 +25,13 @@ class ExoticOption(BaseOption):
             yield_curve=yield_curve,
             strike_level=strike_level,
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
         )
 
         self._mc_pricer = MonteCarloPricer(self.payoff)
 
     def delta(
-        self, spot_change: float = 0.01, spot_start: [list[float], None] = None
+        self, spot_change: float = 0.01, spot: np.array = np.array([1.0])
     ) -> np.array:
         n_stocks = len(self.underlyings)
         spot_up = np.exp(spot_change)
@@ -39,10 +39,10 @@ class ExoticOption(BaseOption):
 
         delta = []
         for i in range(n_stocks):
-            if spot_start is None:
+            if spot is None:
                 x_up, x_down = [1] * n_stocks, [1] * n_stocks
             else:
-                x_up, x_down = spot_start.copy(), spot_start.copy()
+                x_up, x_down = spot.copy(), spot.copy()
 
             x_up[i] *= spot_up
             x_down[i] *= spot_down
@@ -55,7 +55,7 @@ class ExoticOption(BaseOption):
         return np.array(delta)
 
     def gamma(
-        self, spot_change: float = 0.005, spot_start: [list[float], None] = None
+        self, spot_change: float = 0.005, spot: np.array = np.array([1.0])
     ) -> np.array:
         n_stocks = len(self.underlyings)
         spot_up = np.exp(spot_change)
@@ -63,23 +63,23 @@ class ExoticOption(BaseOption):
 
         gamma = []
         for i in range(n_stocks):
-            if spot_start is None:
+            if spot is None:
                 x_up, x_down = [1] * n_stocks, [1] * n_stocks
             else:
-                x_up, x_down = spot_start.copy(), spot_start.copy()
+                x_up, x_down = spot.copy(), spot.copy()
 
             x_up[i] *= spot_up
             x_down[i] *= spot_down
 
-            delta_up = self.delta(spot_start=x_up)
-            delta_down = self.delta(spot_start=x_down)
+            delta_up = self.delta(spot=x_up)
+            delta_down = self.delta(spot=x_down)
 
             gamma.append((delta_up - delta_down) / (spot_up - spot_down))
 
         return np.array(gamma)
 
     def vega(
-        self, vol_change: float = 0.01, spot_start: [list[float], None] = None
+        self, vol_change: float = 0.01, spot: np.array = np.array([1.0])
     ) -> np.array:
         n_stocks = len(self.underlyings)
         diagonal = np.diag(np.sqrt(np.diag(self.underlyings.get_var_covar())))
@@ -93,8 +93,8 @@ class ExoticOption(BaseOption):
             new_var_covar = diag @ corr @ diag
 
             future_value_new = self._mc_pricer.get_future_value(
-                current_spot=spot_start
-                if spot_start is not None
+                current_spot=spot
+                if spot is not None
                 else [1.0] * len(self.underlyings),
                 time_till_maturity=self.time_till_maturity,
                 risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
@@ -110,7 +110,7 @@ class ExoticOption(BaseOption):
         return np.array(vega)
 
     def correlation_sensitivity(
-        self, corr_change: float = 0.01, spot_start: [list[float], None] = None
+        self, corr_change: float = 0.01, spot: np.array = np.array([1.0])
     ) -> np.array:
         n_stocks = len(self.underlyings)
         diagonal = np.diag(np.sqrt(np.diag(self.underlyings.get_var_covar())))
@@ -125,8 +125,8 @@ class ExoticOption(BaseOption):
             new_var_covar = diagonal @ corr @ diagonal
 
             future_value_new = self._mc_pricer.get_future_value(
-                current_spot=spot_start
-                if spot_start is not None
+                current_spot=spot
+                if spot is not None
                 else [1.0] * len(self.underlyings),
                 time_till_maturity=self.time_till_maturity,
                 risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
@@ -141,11 +141,9 @@ class ExoticOption(BaseOption):
 
         return np.array(vega)
 
-    def price(self, spot_start: [float, list[float], None] = None) -> float:
+    def price(self, spot: [float, np.array, None] = None) -> float:
         future_value = self._mc_pricer.get_future_value(
-            current_spot=spot_start
-            if spot_start is not None
-            else [1.0] * len(self.underlyings),
+            current_spot=spot if spot is not None else [1.0] * len(self.underlyings),
             time_till_maturity=self.time_till_maturity,
             risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
             dividends_fn=self._dividends,
@@ -155,11 +153,9 @@ class ExoticOption(BaseOption):
             self.time_till_maturity
         )
 
-    def get_paths(self, spot_start: [float, list[float], None] = None) -> np.array:
+    def get_paths(self, spot: [float, np.array, None] = None) -> np.array:
         return self._mc_pricer.get_paths(
-            current_spot=spot_start
-            if spot_start is not None
-            else [1.0] * len(self.underlyings),
+            current_spot=spot if spot is not None else [1.0] * len(self.underlyings),
             time_till_maturity=self.time_till_maturity,
             risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
             dividends_fn=self._dividends,

@@ -16,7 +16,7 @@ class BaseOption(Instrument):
         self,
         underlyings: Underlyings,
         yield_curve: YieldCurve,
-        strike_level: [float, list[float]],
+        strike_level: [float, np.array],
         start_date: dt.datetime,
         end_date: dt.datetime,
         *args,
@@ -61,20 +61,28 @@ class BaseOption(Instrument):
 
     @abc.abstractmethod
     def delta(
-        self, spot_change: float = 0.01, spot_start: [list[float], None] = None
+        self, spot_change: float = 0.01, spot: np.array = np.array([1.0])
     ) -> np.array:
         raise NotImplementedError
 
     @abc.abstractmethod
     def gamma(
-        self, spot_change: float = 0.005, spot_start: [list[float], None] = None
+        self, spot_change: float = 0.005, spot: np.array = np.array([1.0])
     ) -> np.array:
         raise NotImplementedError
 
     @abc.abstractmethod
     def vega(
-        self, vol_change: float = 0.01, spot_start: [list[float], None] = None
+        self, vol_change: float = 0.01, spot: np.array = np.array([1.0])
     ) -> np.array:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def theta(self, time_change: float = 1 / 365, spot: np.array = np.array([1.0])):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def rho(self, rate_change: float = 0.25 / 100, spot: np.array = np.array([1.0])):
         raise NotImplementedError
 
     def __repr__(self):
@@ -89,7 +97,7 @@ class BaseOption(Instrument):
         return instrument_str
 
     @abc.abstractmethod
-    def price(self, spot_start: [float, list[float], None] = None) -> float:
+    def price(self, spot: [float, np.array, None] = None) -> float:
         raise NotImplementedError
 
     @abc.abstractmethod

@@ -4,10 +4,10 @@ import numpy as np
 
 from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.market_data.underlyings import Underlyings
-from deep_hedging.non_linear.exotic.exotic_option import ExoticOption
+from deep_hedging.non_linear.monte_carlo_option import MonteCarloOption
 
 
-class WorstOfBarrierCall(ExoticOption):
+class WorstOfBarrierCall(MonteCarloOption):
     def __init__(
         self,
         underlyings: Underlyings,
@@ -35,7 +35,7 @@ class WorstOfBarrierCall(ExoticOption):
         return returns
 
 
-class WorstOfBarrierPut(ExoticOption):
+class WorstOfBarrierPut(MonteCarloOption):
     def __init__(
         self,
         underlyings: Underlyings,

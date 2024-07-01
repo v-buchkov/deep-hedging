@@ -44,6 +44,7 @@ setup(
         "IPython",
         "yfinance",
         "gym",
+        "scipy"
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",

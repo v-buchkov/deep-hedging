@@ -5,11 +5,11 @@ from scipy.stats import multivariate_normal
 
 from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.market_data.underlyings import Underlyings
-from deep_hedging.non_linear.exotic.exotic_option import ExoticOption
+from deep_hedging.non_linear.monte_carlo_option import MonteCarloOption
 from deep_hedging.non_linear.exotic.two_assets import TwoAssetsExchange
 
 
-class WorstOfCallTwoAssets(ExoticOption):
+class WorstOfCallTwoAssets(MonteCarloOption):
     def __init__(
         self,
         underlyings: Underlyings,
@@ -104,7 +104,7 @@ class WorstOfCallTwoAssets(ExoticOption):
         return returns
 
 
-class WorstOfPutTwoAssets(ExoticOption):
+class WorstOfPutTwoAssets(MonteCarloOption):
     def __init__(
         self,
         underlyings: Underlyings,

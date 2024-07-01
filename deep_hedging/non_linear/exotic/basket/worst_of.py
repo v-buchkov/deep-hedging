@@ -4,10 +4,10 @@ import numpy as np
 
 from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.market_data.underlyings import Underlyings
-from deep_hedging.non_linear.exotic.exotic_option import ExoticOption
+from deep_hedging.non_linear.monte_carlo_option import MonteCarloOption
 
 
-class WorstOfCall(ExoticOption):
+class WorstOfCall(MonteCarloOption):
     def __init__(
         self,
         underlyings: Underlyings,
@@ -32,11 +32,12 @@ class WorstOfCall(ExoticOption):
         return returns
 
 
-class WorstOfPut(ExoticOption):
+class WorstOfPut(MonteCarloOption):
     def __init__(
         self,
         underlyings: Underlyings,
         yield_curve: YieldCurve,
+        initial_spot: [float, list[float]],
         strike_level: float,
         start_date: dt.datetime,
         end_date: dt.datetime,
@@ -44,6 +45,7 @@ class WorstOfPut(ExoticOption):
         super().__init__(
             underlyings=underlyings,
             yield_curve=yield_curve,
+            initial_spot=initial_spot,
             strike_level=strike_level,
             start_date=start_date,
             end_date=end_date,
