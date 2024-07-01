@@ -9,6 +9,7 @@ from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.market_data.market_data import MarketData
 from deep_hedging.monte_carlo.monte_carlo_pricer import MonteCarloPricer
 from deep_hedging.config.global_config import GlobalConfig
+from deep_hedging.utils import annuity_factor
 
 
 class ExoticOption(Instrument):
@@ -20,7 +21,7 @@ class ExoticOption(Instrument):
         start_date: dt.datetime,
         end_date: dt.datetime,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
 
@@ -39,13 +40,28 @@ class ExoticOption(Instrument):
 
     # TODO: non-constant term
     @lru_cache(maxsize=None)
-    def _volatility_surface(self, term: float) -> np.array:
+    def volatility_surface(self, term: float) -> np.array:
         return self.underlyings.get_var_covar()
 
     # TODO: non-constant term
     @lru_cache(maxsize=None)
     def _dividends(self, term: float) -> np.array:
         return self.underlyings.get_dividends()
+
+    def pv_coupons(self) -> float:
+        return self.price()
+
+    def coupon(
+        self, frequency: float = 0.0, commission: float = 0.0, *args, **kwargs
+    ) -> float:
+        if frequency > 0:
+            annual_rate = self.yield_curve.get_rate(self.time_till_maturity)
+            return (self.pv_coupons() - commission) / annuity_factor(
+                annual_rate=annual_rate,
+                frequency=frequency,
+                till_maturity=self.time_till_maturity,
+            )
+        return 0.0
 
     def delta(
         self, spot_change: float = 0.01, spot_start: [list[float], None] = None
@@ -72,25 +88,26 @@ class ExoticOption(Instrument):
         return np.array(delta)
 
     def gamma(
-        self, spot_change: float = 0.01, spot_start: [list[float], None] = None
+        self, spot_change: float = 0.005, spot_start: [list[float], None] = None
     ) -> np.array:
         n_stocks = len(self.underlyings)
         spot_up = np.exp(spot_change)
+        spot_down = np.exp(-spot_change)
 
         gamma = []
         for i in range(n_stocks):
             if spot_start is None:
-                x_up = [1] * n_stocks
+                x_up, x_down = [1] * n_stocks, [1] * n_stocks
             else:
-                x_up = spot_start.copy()
+                x_up, x_down = spot_start.copy(), spot_start.copy()
 
-            delta_down = self.delta(spot_start=x_up)
-
-            x_up[i] = spot_up
+            x_up[i] *= spot_up
+            x_down[i] *= spot_down
 
             delta_up = self.delta(spot_start=x_up)
+            delta_down = self.delta(spot_start=x_down)
 
-            gamma.append((delta_up - delta_down) / spot_change)
+            gamma.append((delta_up - delta_down) / (spot_up - spot_down))
 
         return np.array(gamma)
 
@@ -165,7 +182,7 @@ class ExoticOption(Instrument):
             time_till_maturity=self.time_till_maturity,
             risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
             dividends_fn=self._dividends,
-            var_covar_fn=self._volatility_surface,
+            var_covar_fn=self.volatility_surface,
         )
         return future_value * self.yield_curve.get_discount_factor(
             self.time_till_maturity
@@ -179,12 +196,19 @@ class ExoticOption(Instrument):
             time_till_maturity=self.time_till_maturity,
             risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
             dividends_fn=self._dividends,
-            var_covar_fn=self._volatility_surface,
+            var_covar_fn=self.volatility_surface,
         )
 
-    @abc.abstractmethod
     def __repr__(self):
-        raise NotImplementedError
+        instrument_str = f"{self.__class__.__name__}:\n"
+        underlyings = "\n".join([f"-> {stock}" for stock in self.underlyings.tickers])
+        instrument_str += underlyings
+        instrument_str += f"* Strike = {self.strike_level * 100}\n"
+        if hasattr(self, "barrier_level"):
+            instrument_str += f"* Barrier = {self.barrier_level * 100}\n"
+        instrument_str += f"* Start Date = {self.start_date}\n"
+        instrument_str += f"* End Date = {self.end_date}\n"
+        return instrument_str
 
     @abc.abstractmethod
     def payoff(self, spot_paths: np.array) -> float:

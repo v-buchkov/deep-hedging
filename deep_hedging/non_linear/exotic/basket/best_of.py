@@ -7,7 +7,7 @@ from deep_hedging.market_data.market_data import MarketData
 from deep_hedging.non_linear.exotic.exotic_option import ExoticOption
 
 
-class WorstOfCall(ExoticOption):
+class BestOfCall(ExoticOption):
     def __init__(
         self,
         underlyings: MarketData,
@@ -25,14 +25,14 @@ class WorstOfCall(ExoticOption):
         )
 
     def payoff(self, spot_paths: np.array) -> np.array:
-        indices = np.where(np.any(spot_paths[:, -1] <= self.strike_level, axis=1))
-        returns = spot_paths[:, -1].min(axis=1) - self.strike_level
+        indices = np.where(np.all(spot_paths[:, -1] <= self.strike_level, axis=1))
+        returns = spot_paths[:, -1].max(axis=1) - self.strike_level
         returns[indices] = 0
 
         return returns
 
 
-class WorstOfPut(ExoticOption):
+class BestOfPut(ExoticOption):
     def __init__(
         self,
         underlyings: MarketData,
@@ -50,8 +50,8 @@ class WorstOfPut(ExoticOption):
         )
 
     def payoff(self, spot_paths: np.array) -> np.array:
-        indices = np.where(np.all(spot_paths[:, -1] >= self.strike_level, axis=1))
-        returns = self.strike_level - spot_paths[:, -1].min(axis=1)
+        indices = np.where(np.any(spot_paths[:, -1] >= self.strike_level, axis=1))
+        returns = self.strike_level - spot_paths[:, -1].max(axis=1)
         returns[indices] = 0
 
         return returns
