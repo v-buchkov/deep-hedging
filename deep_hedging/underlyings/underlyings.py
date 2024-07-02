@@ -7,7 +7,9 @@ import pandas as pd
 import pandas_datareader.data as reader
 import yfinance as yfin
 
-from deep_hedging.market_data.tickers import Tickers
+from deep_hedging.underlyings.ticker import Ticker
+from deep_hedging.underlyings.tickers import Tickers
+from deep_hedging.utils.linalg import corr_matrix_from_cov
 from deep_hedging.config.global_config import GlobalConfig
 
 yfin.pdr_override()
@@ -18,19 +20,26 @@ class Underlyings:
 
     def __init__(
         self,
-        tickers: Tickers,
+        tickers: [list[Ticker], Tickers],
         start: dt.datetime,
         end: dt.datetime,
         sampling_period: str = "D",
         data: [pd.DataFrame, None] = None,
         dividends: [np.array, None] = None,
+        means: [np.array, None] = None,
+        var_covar: [np.array, None] = None,
     ):
         self.data = data
         self.dividends = dividends
+        self.means = means
+        self.var_covar = var_covar
 
         self.sampling_period = sampling_period
 
-        self.tickers = tickers
+        if isinstance(tickers, list):
+            self.tickers = Tickers(tickers)
+        else:
+            self.tickers = tickers
         self.end = end
 
         self.start = start
@@ -39,6 +48,12 @@ class Underlyings:
 
     def __len__(self):
         return len(self.tickers)
+
+    def _initialize(self) -> None:
+        if self.means is None or self.var_covar is None:
+            if self.data is None:
+                self._load_yahoo()
+            self._resample_data()
 
     def _load_yahoo(self) -> None:
         self.data = reader.get_data_yahoo(self.tickers.codes, self.start, self.end)[
@@ -50,11 +65,6 @@ class Underlyings:
             self._load_yahoo()
         self.data = self.data.resample(self.sampling_period).first().dropna(axis=0)
         self._df_returns = self.data.pct_change(fill_method=None).dropna(axis=0)
-
-    def _initialize(self) -> None:
-        if self.data is None:
-            self._load_yahoo()
-        self._resample_data()
 
     def plot(self) -> None:
         n_stocks = len(self._df_returns.columns)
@@ -122,13 +132,19 @@ class Underlyings:
             raise TypeError(f"Item {item} is not a valid ticker or index")
 
     def get_means(self) -> np.array:
-        return self._df_returns.mean().to_numpy() * GlobalConfig.TRADING_DAYS
+        if self.means is None:
+            return self._df_returns.mean().to_numpy() * GlobalConfig.TRADING_DAYS
+        return self.means
 
     def get_var_covar(self) -> np.array:
-        return self._df_returns.cov().to_numpy() * GlobalConfig.TRADING_DAYS
+        if self.var_covar is None:
+            return self._df_returns.cov().to_numpy() * GlobalConfig.TRADING_DAYS
+        return self.var_covar
 
     def get_corr(self) -> np.array:
-        return self._df_returns.corr().to_numpy()
+        if self.var_covar is None:
+            return self._df_returns.corr().to_numpy()
+        return corr_matrix_from_cov(self.var_covar)
 
     @lru_cache(maxsize=None)
     def get_dividends(self) -> np.array:
@@ -139,3 +155,4 @@ class Underlyings:
                     for ticker in self.tickers.codes
                 ]
             )
+        return self.dividends

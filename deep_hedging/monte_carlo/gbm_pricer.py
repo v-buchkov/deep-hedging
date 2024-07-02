@@ -22,41 +22,40 @@ class GBMPricer(MonteCarloPricer):
         dividends_fn: Callable[[float], float],
         var_covar_fn: Callable[[float], np.array],
         n_paths: [int, None] = None,
-        random_seed: [int, None] = None,
     ) -> np.array:
         days_till_maturity = int(round(GlobalConfig.TRADING_DAYS * time_till_maturity))
 
         if n_paths is None:
             n_paths = GlobalConfig.MONTE_CARLO_PATHS
 
-        t = days_till_maturity
         n_stocks = len(current_spot)
 
-        time = np.linspace(0, t / GlobalConfig.TRADING_DAYS, t)
+        time = np.linspace(0, time_till_maturity, days_till_maturity)
         d_time = time[1] - time[0]
 
         drift = []
-        cholesky = []
+        vol_scaling = []
         for t in time:
             var_covar = var_covar_fn(t)
             drift.append(
                 [
-                    (
-                        risk_free_rate_fn(t)
-                        - dividends_fn(t)
-                        - 0.5 * np.diag(var_covar) ** 2
-                    )
+                    (risk_free_rate_fn(t) - dividends_fn(t) - 0.5 * np.diag(var_covar))
                     * d_time
                 ]
             )
-            cholesky.append(np.linalg.cholesky(var_covar))
+            if len(current_spot) == 1:
+                vol_scaling.append(np.sqrt(np.diag(var_covar)))
+            else:
+                vol_scaling.append(np.linalg.cholesky(var_covar))
 
         drift = np.array(drift).reshape(1, len(time), n_stocks, 1)
-        cholesky = np.array(cholesky).reshape(1, len(time), n_stocks, n_stocks)
+        vol_scaling = np.array(vol_scaling).reshape(1, len(time), n_stocks, n_stocks)
 
-        np.random.seed(random_seed)
+        if self.random_seed is not None:
+            np.random.seed(self.random_seed)
+
         diffusion = (
-            cholesky
+            vol_scaling
             @ np.random.normal(0, 1, size=(n_paths, len(time), n_stocks, 1))
             * np.sqrt(d_time)
         )

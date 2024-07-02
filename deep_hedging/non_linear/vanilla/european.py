@@ -5,7 +5,7 @@ import scipy.stats as scs
 
 from deep_hedging.non_linear.base_option import BaseOption
 from deep_hedging.curve.yield_curve import YieldCurve
-from deep_hedging.market_data.underlyings import Underlyings
+from deep_hedging.underlyings.underlyings import Underlyings
 
 
 class EuropeanCall(BaseOption):
@@ -13,7 +13,6 @@ class EuropeanCall(BaseOption):
         self,
         underlyings: Underlyings,
         yield_curve: YieldCurve,
-        initial_spot: [float, np.array],
         strike_level: [float, np.array],
         start_date: dt.datetime,
         end_date: dt.datetime,
@@ -23,7 +22,6 @@ class EuropeanCall(BaseOption):
         super().__init__(
             underlyings=underlyings,
             yield_curve=yield_curve,
-            initial_spot=initial_spot,
             strike_level=strike_level,
             start_date=start_date,
             end_date=end_date,
@@ -31,13 +29,10 @@ class EuropeanCall(BaseOption):
 
         self.implied_vol = np.sqrt(np.diag(self.underlyings.get_var_covar()))
 
-    def payoff(self, spot: float) -> float:
-        return np.maximum(spot - self.strike_level, 0)
+    def payoff(self, spot: np.array) -> np.array:
+        return np.maximum(spot[:, -1] - self.strike_level, 0)
 
-    def price(self, spot: [float, np.array, None] = None) -> float:
-        if spot is None:
-            spot = np.array([1.0])
-
+    def price(self, spot: np.array = np.array([1.0])) -> float:
         rf_rate = self.yield_curve.get_rate(self.time_till_maturity)
 
         d1 = (
@@ -105,7 +100,7 @@ class EuropeanCall(BaseOption):
 
         return spot * np.sqrt(self.time_till_maturity) * pdf_d1
 
-    def theta(self, time_change: float = 1 / 365, spot: np.array = np.array([1.0])):
+    def theta(self, time_change: float = 1 / 252, spot: np.array = np.array([1.0])):
         rf_rate = self.yield_curve.get_rate(self.time_till_maturity)
 
         d1 = (
@@ -150,7 +145,6 @@ class EuropeanPut(BaseOption):
         self,
         underlyings: Underlyings,
         yield_curve: YieldCurve,
-        initial_spot: [float, np.array],
         strike_level: [float, np.array],
         start_date: dt.datetime,
         end_date: dt.datetime,
@@ -160,7 +154,6 @@ class EuropeanPut(BaseOption):
         super().__init__(
             underlyings=underlyings,
             yield_curve=yield_curve,
-            initial_spot=initial_spot,
             strike_level=strike_level,
             start_date=start_date,
             end_date=end_date,
@@ -169,16 +162,15 @@ class EuropeanPut(BaseOption):
         self.european_call = EuropeanCall(
             underlyings=underlyings,
             yield_curve=yield_curve,
-            initial_spot=initial_spot,
             strike_level=strike_level,
             start_date=start_date,
             end_date=end_date,
         )
 
-    def payoff(self, spot: float) -> float:
-        return np.maximum(self.strike_level - spot, 0)
+    def payoff(self, spot: np.array) -> np.array:
+        return np.maximum(self.strike_level - spot[:, -1], 0)
 
-    def price(self, spot: [float, np.array, None] = None) -> float:
+    def price(self, spot: np.array = np.array([1.0])) -> float:
         return (
             self.european_call.price(spot=spot)
             - spot
@@ -200,7 +192,7 @@ class EuropeanPut(BaseOption):
     def vega(self, vol_change: float = 0.01, spot: np.array = np.array([1.0])):
         return self.european_call.vega(vol_change=vol_change, spot=spot)
 
-    def theta(self, time_change: float = 1 / 365, spot: np.array = np.array([1.0])):
+    def theta(self, time_change: float = 1 / 252, spot: np.array = np.array([1.0])):
         rf_rate = self.yield_curve.get_rate(self.time_till_maturity)
         # Assuming that [dS/dt = 0]
         return self.european_call.theta(

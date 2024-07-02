@@ -4,7 +4,7 @@ import datetime as dt
 import numpy as np
 
 from deep_hedging.non_linear.base_option import BaseOption
-from deep_hedging.market_data.underlyings import Underlyings
+from deep_hedging.underlyings.underlyings import Underlyings
 from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.monte_carlo.monte_carlo_pricer import MonteCarloPricer
 

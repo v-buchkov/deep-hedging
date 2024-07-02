@@ -4,7 +4,7 @@ import numpy as np
 from scipy.stats import norm
 
 from deep_hedging.curve.yield_curve import YieldCurve
-from deep_hedging.market_data.underlyings import Underlyings
+from deep_hedging.underlyings.underlyings import Underlyings
 from deep_hedging.non_linear.monte_carlo_option import MonteCarloOption
 
 

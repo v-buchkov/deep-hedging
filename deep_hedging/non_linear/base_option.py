@@ -6,7 +6,7 @@ import numpy as np
 
 from deep_hedging.base.instrument import Instrument
 from deep_hedging.curve.yield_curve import YieldCurve
-from deep_hedging.market_data.underlyings import Underlyings
+from deep_hedging.underlyings.underlyings import Underlyings
 from deep_hedging.config.global_config import GlobalConfig
 from deep_hedging.utils import annuity_factor
 
@@ -59,12 +59,14 @@ class BaseOption(Instrument):
             )
         return 0.0
 
+    # TODO: add normalization decorator
     @abc.abstractmethod
     def delta(
         self, spot_change: float = 0.01, spot: np.array = np.array([1.0])
     ) -> np.array:
         raise NotImplementedError
 
+    # TODO: add normalization decorator
     @abc.abstractmethod
     def gamma(
         self, spot_change: float = 0.005, spot: np.array = np.array([1.0])
