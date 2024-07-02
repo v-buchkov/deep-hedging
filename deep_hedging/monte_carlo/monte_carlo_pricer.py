@@ -22,11 +22,10 @@ class MonteCarloPricer:
         dividends_fn: Callable[[float], float],
         var_covar_fn: Callable[[float], np.array],
         n_paths: [int, None] = None,
-        random_seed: [int, None] = None,
     ) -> np.array:
         raise NotImplementedError
 
-    def get_future_value(
+    def _future_value(
         self,
         current_spot: list[float],
         time_till_maturity: float,
@@ -42,9 +41,26 @@ class MonteCarloPricer:
             dividends_fn=dividends_fn,
             var_covar_fn=var_covar_fn,
             n_paths=n_paths,
-            random_seed=self.random_seed,
         )
 
         instrument_payoffs = self.payoff_function(random_paths)
-
         return np.mean(instrument_payoffs)
+
+    def price(
+        self,
+        current_spot: list[float],
+        time_till_maturity: float,
+        risk_free_rate_fn: Callable[[float], float],
+        dividends_fn: Callable[[float], float],
+        var_covar_fn: Callable[[float], np.array],
+        n_paths: [int, None] = None,
+    ):
+        fv = self._future_value(
+            current_spot=current_spot,
+            time_till_maturity=time_till_maturity,
+            risk_free_rate_fn=risk_free_rate_fn,
+            dividends_fn=dividends_fn,
+            var_covar_fn=var_covar_fn,
+            n_paths=n_paths,
+        )
+        return fv * np.exp(-time_till_maturity * risk_free_rate_fn(time_till_maturity))
