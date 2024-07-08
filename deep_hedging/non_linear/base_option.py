@@ -34,7 +34,7 @@ class BaseOption(Instrument):
             self.end_date - self.start_date
         ).days / GlobalConfig.CALENDAR_DAYS
 
-    # TODO: non-constant term
+    # TODO: non-constant term + call to self.strike
     @lru_cache(maxsize=None)
     def volatility_surface(self, term: float) -> np.array:
         return self.underlyings.get_var_covar()

@@ -5,11 +5,11 @@ from scipy.stats import multivariate_normal
 
 from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.underlyings.underlyings import Underlyings
-from deep_hedging.non_linear.monte_carlo_option import MonteCarloOption
+from deep_hedging.non_linear.base_option import BaseOption
 from deep_hedging.non_linear.exotic.two_assets import TwoAssetsExchange
 
 
-class WorstOfCallTwoAssets(MonteCarloOption):
+class WorstOfCallTwoAssets(BaseOption):
     def __init__(
         self,
         underlyings: Underlyings,
@@ -34,39 +34,42 @@ class WorstOfCallTwoAssets(MonteCarloOption):
         dist = multivariate_normal(mean=None, cov=var_covar)
         return dist.cdf(np.array([upper_limit1, upper_limit2]))
 
-    def _closed_out_price(self, spot_start: [float, list[float], None] = None) -> float:
-        assert (
-            isinstance(spot_start, list) and len(spot_start) == 2
-        ), "This experiment is valid for 2 assets only!"
-        spot1, spot2 = spot_start
+    def _closed_out_price(self, spot_start: np.array) -> float:
+        """Using notation from (Stulz, 1982)"""
+        self.strike_level = self.strike_level + 1e-12
+        v, h = spot_start
 
         tau = self.time_till_maturity
 
         var_covar = self.volatility_surface(tau)
-        vol1, vol2 = np.sqrt(np.diag(var_covar))
-        corr = var_covar[0, 1] / (vol1 * vol2)
-        vol_joint = np.sqrt(vol1**2 + vol2**2 - 2 * corr * vol1 * vol2)
+        vol_v, vol_h = np.sqrt(np.diag(var_covar))
+        corr = var_covar[0, 1] / (vol_v * vol_h)
+        vol_joint = np.sqrt(vol_v**2 + vol_h**2 - 2 * corr * vol_v * vol_h)
 
         rate = self.yield_curve.get_rate(tau)
 
-        gamma1 = (np.log(spot1 / self.strike_level) + (rate - vol1**2 / 2) * tau) / (
-            vol1 * np.sqrt(tau)
+        gamma1 = (np.log(h / self.strike_level) + (rate - vol_h**2 / 2) * tau) / (
+            vol_h * np.sqrt(tau)
         )
-        gamma2 = (np.log(spot2 / self.strike_level) + (rate - vol2**2 / 2) * tau) / (
-            vol2 * np.sqrt(tau)
+        gamma2 = (np.log(v / self.strike_level) + (rate - vol_v**2 / 2) * tau) / (
+            vol_v * np.sqrt(tau)
         )
 
         cdf1 = self._bivariate_cdf(
-            upper_limit1=gamma1 + vol1 * np.sqrt(tau),
-            upper_limit2=(np.log(spot2 / spot1) - vol_joint**2 / 2 * np.sqrt(tau))
+            upper_limit1=gamma1 + vol_h * np.sqrt(tau),
+            upper_limit2=(
+                np.log(v / h) - vol_joint**2 / 2 * tau
+            )  # beware: not * np.sqrt(tau), but * tau
             / (vol_joint * np.sqrt(tau)),
-            correlation=(corr * vol2 - vol1) / vol_joint,
+            correlation=(corr * vol_v - vol_h) / vol_joint,
         )
         cdf2 = self._bivariate_cdf(
-            upper_limit1=gamma2 + vol2 * np.sqrt(tau),
-            upper_limit2=(np.log(spot1 / spot2) - vol_joint**2 / 2 * np.sqrt(tau))
+            upper_limit1=gamma2 + vol_v * np.sqrt(tau),
+            upper_limit2=(
+                np.log(h / v) - vol_joint**2 / 2 * tau
+            )  # beware: not * np.sqrt(tau), but * tau
             / (vol_joint * np.sqrt(tau)),
-            correlation=(corr * vol1 - vol2) / vol_joint,
+            correlation=(corr * vol_h - vol_v) / vol_joint,
         )
         cdf_below = self._bivariate_cdf(
             upper_limit1=gamma1, upper_limit2=gamma2, correlation=corr
@@ -74,16 +77,10 @@ class WorstOfCallTwoAssets(MonteCarloOption):
 
         discount_factor = self.discount_factor(rate, tau)
 
-        return (
-            spot1 * cdf1
-            + spot2 * cdf2
-            - self.strike_level * discount_factor * cdf_below
-        )
+        return h * cdf1 + v * cdf2 - self.strike_level * discount_factor * cdf_below
 
-    def price(self, spot_start: [float, list[float], None] = None) -> float:
-        assert (
-            isinstance(spot_start, list) and len(spot_start) == 2
-        ), "This experiment is valid for 2 assets only!"
+    def price(self, spot_start: np.array = np.array([1.0, 1.0])) -> float:
+        assert len(spot_start) == 2, "This experiment is valid for 2 assets only!"
         if self.strike_level == 0.0:
             spot1, _ = spot_start
             exchange_opt = TwoAssetsExchange(
@@ -104,7 +101,7 @@ class WorstOfCallTwoAssets(MonteCarloOption):
         return returns
 
 
-class WorstOfPutTwoAssets(MonteCarloOption):
+class WorstOfPutTwoAssets(BaseOption):
     def __init__(
         self,
         underlyings: Underlyings,
@@ -129,10 +126,8 @@ class WorstOfPutTwoAssets(MonteCarloOption):
         dist = multivariate_normal(mean=None, cov=var_covar)
         return dist.cdf(np.array([upper_limit1, upper_limit2]))
 
-    def price(self, spot_start: [float, list[float], None] = None) -> float:
-        assert (
-            isinstance(spot_start, list) and len(spot_start) == 2
-        ), "This experiment is valid for 2 assets only!"
+    def price(self, spot_start: np.array = np.array([1.0, 1.0])) -> float:
+        assert len(spot_start) == 2, "This experiment is valid for 2 assets only!"
 
         tau = self.time_till_maturity
         rate = self.yield_curve.get_rate(tau)
