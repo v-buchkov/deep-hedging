@@ -3,6 +3,7 @@ import datetime as dt
 from functools import lru_cache
 
 import numpy as np
+import pandas as pd
 
 from deep_hedging.base.instrument import Instrument
 from deep_hedging.curve.yield_curve import YieldCurve
@@ -16,7 +17,6 @@ class BaseOption(Instrument):
         self,
         underlyings: Underlyings,
         yield_curve: YieldCurve,
-        strike_level: [float, np.array],
         start_date: dt.datetime,
         end_date: dt.datetime,
         *args,
@@ -26,13 +26,12 @@ class BaseOption(Instrument):
 
         self.underlyings = underlyings
         self.yield_curve = yield_curve
-        self.strike_level = strike_level
         self.start_date = start_date
         self.end_date = end_date
 
         self.time_till_maturity = (
-            self.end_date - self.start_date
-        ).days / GlobalConfig.CALENDAR_DAYS
+            pd.bdate_range(start_date, end_date).shape[0] / GlobalConfig.TRADING_DAYS
+        )
 
     # TODO: non-constant term + call to self.strike
     @lru_cache(maxsize=None)
@@ -91,7 +90,8 @@ class BaseOption(Instrument):
         instrument_str = f"{self.__class__.__name__}:\n"
         underlyings = "\n".join([f"-> {stock}" for stock in self.underlyings.tickers])
         instrument_str += underlyings
-        instrument_str += f"* Strike = {self.strike_level * 100}\n"
+        if hasattr(self, "strike_level"):
+            instrument_str += f"* Strike = {self.strike_level * 100}\n"
         if hasattr(self, "barrier_level"):
             instrument_str += f"* Barrier = {self.barrier_level * 100}\n"
         instrument_str += f"* Start Date = {self.start_date}\n"

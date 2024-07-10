@@ -2,11 +2,14 @@ from deep_hedging.config import ExperimentConfig
 from deep_hedging.utils import seed_everything
 
 from deep_hedging.base.instrument import Instrument
-from deep_hedging.curve.constant_rate import ConstantRateCurve
+
+from deep_hedging.curve import ConstantRateCurve
+from deep_hedging.curve import NelsonSiegelCurve
+
 from deep_hedging.underlyings import Ticker, Tickers, Underlyings
 from deep_hedging.fixed_income import RiskFreeBond
 from deep_hedging.linear import Forward
-from deep_hedging.non_linear import EuropeanCall, EuropeanPut, WorstOfBarrierPut
+from deep_hedging.non_linear import EuropeanCall, EuropeanPut
 
 from deep_hedging.dl.spot_dataset import SpotDataset
 from deep_hedging.dl.models import MLPHedger, LSTMHedger, LSTMHedgerTexts

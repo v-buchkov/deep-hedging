@@ -16,10 +16,10 @@ class GBMPricer(MonteCarloPricer):
 
     def get_paths(
         self,
-        current_spot: list[float],
+        spot: list[float],
         time_till_maturity: float,
-        risk_free_rate_fn: Callable[[float], float],
-        dividends_fn: Callable[[float], float],
+        risk_free_rate_fn: Callable[[float], np.array],
+        dividends_fn: Callable[[float], np.array],
         var_covar_fn: Callable[[float], np.array],
         n_paths: [int, None] = None,
     ) -> np.array:
@@ -28,7 +28,7 @@ class GBMPricer(MonteCarloPricer):
         if n_paths is None:
             n_paths = GlobalConfig.MONTE_CARLO_PATHS
 
-        n_stocks = len(current_spot)
+        n_stocks = len(spot)
 
         time = np.linspace(0, time_till_maturity, days_till_maturity)
         d_time = time[1] - time[0]
@@ -43,7 +43,7 @@ class GBMPricer(MonteCarloPricer):
                     * d_time
                 ]
             )
-            if len(current_spot) == 1:
+            if len(spot) == 1:
                 vol_scaling.append(np.sqrt(np.diag(var_covar)))
             else:
                 vol_scaling.append(np.linalg.cholesky(var_covar))
@@ -60,7 +60,7 @@ class GBMPricer(MonteCarloPricer):
             * np.sqrt(d_time)
         )
         paths = np.exp(drift + diffusion)
-        paths = np.insert(paths, 0, np.array(current_spot).reshape(1, 1, -1, 1), axis=1)
+        paths = np.insert(paths, 0, np.array(spot).reshape(1, 1, -1, 1), axis=1)
         paths = np.cumprod(paths, axis=1).squeeze(3)
 
         return paths
