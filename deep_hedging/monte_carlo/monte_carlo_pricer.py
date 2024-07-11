@@ -3,8 +3,6 @@ from typing import Callable
 
 import numpy as np
 
-from deep_hedging.utils.linalg import corr_matrix_from_cov
-
 
 class MonteCarloPricer:
     def __init__(

@@ -17,6 +17,7 @@ class BaseOption(Instrument):
         self,
         underlyings: Underlyings,
         yield_curve: YieldCurve,
+        strike_level: float,
         start_date: dt.datetime,
         end_date: dt.datetime,
         *args,
@@ -26,6 +27,7 @@ class BaseOption(Instrument):
 
         self.underlyings = underlyings
         self.yield_curve = yield_curve
+        self.strike_level = strike_level
         self.start_date = start_date
         self.end_date = end_date
 
@@ -40,7 +42,7 @@ class BaseOption(Instrument):
 
     # TODO: non-constant term
     @lru_cache(maxsize=None)
-    def _dividends(self, term: float) -> np.array:
+    def dividends(self, term: float) -> np.array:
         return self.underlyings.get_dividends()
 
     def pv_coupons(self) -> float:

@@ -14,6 +14,7 @@ class MonteCarloOption(BaseOption):
         self,
         underlyings: Underlyings,
         yield_curve: YieldCurve,
+        strike_level: float,
         start_date: dt.datetime,
         end_date: dt.datetime,
         *args,
@@ -22,6 +23,7 @@ class MonteCarloOption(BaseOption):
         super().__init__(
             underlyings=underlyings,
             yield_curve=yield_curve,
+            strike_level=strike_level,
             start_date=start_date,
             end_date=end_date,
         )
@@ -94,7 +96,7 @@ class MonteCarloOption(BaseOption):
                 spot=spot if spot is not None else [1.0] * len(self.underlyings),
                 time_till_maturity=self.time_till_maturity,
                 risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
-                dividends_fn=self._dividends,
+                dividends_fn=self.dividends,
                 var_covar_fn=lambda term: new_var_covar,
             )
 
@@ -121,7 +123,7 @@ class MonteCarloOption(BaseOption):
                 spot=spot if spot is not None else [1.0] * len(self.underlyings),
                 time_till_maturity=self.time_till_maturity,
                 risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
-                dividends_fn=self._dividends,
+                dividends_fn=self.dividends,
                 var_covar_fn=lambda term: new_var_covar,
             )
 
@@ -134,7 +136,7 @@ class MonteCarloOption(BaseOption):
             spot=spot if spot is not None else [1.0] * len(self.underlyings),
             time_till_maturity=self.time_till_maturity,
             risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
-            dividends_fn=self._dividends,
+            dividends_fn=self.dividends,
             var_covar_fn=self.volatility_surface,
         )
 

@@ -59,6 +59,13 @@ class Underlyings:
         self.data = reader.get_data_yahoo(self.tickers.codes, self.start, self.end)[
             self.TARGET_COLUMN
         ]
+        if self.data.shape[1] != len(self.tickers.codes):
+            for i, ticker in enumerate(self.tickers.codes):
+                if i < self.data.shape[1]:
+                    if self.data.columns[i] != ticker:
+                        self.data.insert(i, column=f"{ticker}_2", value=self.data.loc[:, ticker])
+                else:
+                    self.data.insert(i, column=f"{ticker}_2", value=self.data.loc[:, ticker])
 
     def _resample_data(self) -> None:
         if self.data is None:
