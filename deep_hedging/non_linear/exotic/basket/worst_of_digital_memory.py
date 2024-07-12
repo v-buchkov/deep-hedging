@@ -50,7 +50,13 @@ class WorstOfDigitalMemoryCall(MonteCarloOption):
 
         payments = np.where(payments > 0, payments, 0)
 
-        dfs = np.array([1.] + [1 / self.discount_factor(self.yield_curve.get_rate(period), period) for period in periods])
+        dfs = np.array(
+            [1.0]
+            + [
+                1 / self.discount_factor(self.yield_curve.get_rate(period), period)
+                for period in periods
+            ]
+        )
         payments = payments * dfs
 
         return payments.sum(axis=1)
@@ -99,7 +105,13 @@ class WorstOfDigitalMemoryPut(MonteCarloOption):
 
         payments = np.where(payments > 0, payments, 0)
 
-        dfs = np.array([1.] + [1 / self.discount_factor(self.yield_curve.get_rate(period), period) for period in periods])
+        dfs = np.array(
+            [1.0]
+            + [
+                1 / self.discount_factor(self.yield_curve.get_rate(period), period)
+                for period in periods
+            ]
+        )
         payments = payments * dfs
 
         return payments.sum(axis=1)
