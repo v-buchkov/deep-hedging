@@ -9,7 +9,7 @@ from deep_hedging.non_linear.monte_carlo_option import MonteCarloOption
 from deep_hedging.utils.fixing_dates import get_periods_indices
 
 
-class WorstOfDigitalCall(MonteCarloOption):
+class WorstOfDigitalMemoryCall(MonteCarloOption):
     def __init__(
         self,
         underlyings: Underlyings,
@@ -36,20 +36,27 @@ class WorstOfDigitalCall(MonteCarloOption):
         periods, observation_days = get_periods_indices(
             self.time_till_maturity, self.frequency.value
         )
-
         coupons = np.where(
             np.all(spot_paths[:, observation_days, :] >= self.strike_level, axis=2),
             self.digital_coupon,
             0,
         )
 
+        for i in range(coupons.shape[1]):
+            coupons[:, i] *= i + 1
+
+        payments = coupons.copy()
+        payments[:, 1:] = np.diff(coupons, axis=1)
+
+        payments = np.where(payments > 0, payments, 0)
+
         dfs = np.array([1.] + [1 / self.discount_factor(self.yield_curve.get_rate(period), period) for period in periods])
-        coupons = coupons * dfs
+        payments = payments * dfs
 
-        return coupons.sum(axis=1)
+        return payments.sum(axis=1)
 
 
-class WorstOfDigitalPut(MonteCarloOption):
+class WorstOfDigitalMemoryPut(MonteCarloOption):
     def __init__(
         self,
         underlyings: Underlyings,
@@ -78,14 +85,21 @@ class WorstOfDigitalPut(MonteCarloOption):
         periods, observation_days = get_periods_indices(
             self.time_till_maturity, self.frequency.value
         )
-
         coupons = np.where(
             np.all(spot_paths[:, observation_days, :] <= self.strike_level, axis=2),
             self.digital_coupon,
             0,
         )
 
-        dfs = np.array([1.] + [1 / self.discount_factor(self.yield_curve.get_rate(period), period) for period in periods])
-        coupons = coupons * dfs
+        for i in range(coupons.shape[1]):
+            coupons[:, i] *= i + 1
 
-        return coupons.sum(axis=1)
+        payments = coupons.copy()
+        payments[:, 1:] = np.diff(coupons, axis=1)
+
+        payments = np.where(payments > 0, payments, 0)
+
+        dfs = np.array([1.] + [1 / self.discount_factor(self.yield_curve.get_rate(period), period) for period in periods])
+        payments = payments * dfs
+
+        return payments.sum(axis=1)

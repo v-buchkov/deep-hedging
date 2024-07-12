@@ -13,7 +13,7 @@ class GlobalConfig:
     )
 
     MONTE_CARLO_PATHS: int = field(
-        default=10_000,
+        default=100_000,
         metadata={"docs": "Default number of paths for Monte Carlo Simulation"},
     )
 
