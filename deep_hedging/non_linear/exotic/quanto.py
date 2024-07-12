@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 import numpy as np
 import pandas as pd
 
@@ -15,6 +13,7 @@ class QuantoOption:
         option: BaseOption,
         modifying_underlyings: Underlyings,
         yield_curve: YieldCurve,
+        random_seed: int = None
     ):
         self.option = option
         self.yield_curve = yield_curve
@@ -35,11 +34,10 @@ class QuantoOption:
             data=data
         )
 
-        self._quanto_pricer = GBMQuantoPricer(self.option.payoff)
+        self._quanto_pricer = GBMQuantoPricer(self.option.payoff, random_seed=random_seed)
 
     # TODO: non-constant vol
     def volatility_surface(self, t: np.array) -> np.array:
-        print(self.underlyings.get_var_covar())
         return self.underlyings.get_var_covar()
 
     def price(self, spot: [float, np.array, None] = None) -> float:

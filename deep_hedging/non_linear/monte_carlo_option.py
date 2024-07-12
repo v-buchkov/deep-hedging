@@ -17,6 +17,7 @@ class MonteCarloOption(BaseOption):
         strike_level: float,
         start_date: dt.datetime,
         end_date: dt.datetime,
+        random_seed: int = None,
         *args,
         **kwargs,
     ):
@@ -28,7 +29,7 @@ class MonteCarloOption(BaseOption):
             end_date=end_date,
         )
 
-        self._mc_pricer = GBMPricer(self.payoff)
+        self._mc_pricer = GBMPricer(self.payoff, random_seed=random_seed)
 
     def delta(
         self, spot_change: float = 0.01, spot: np.array = np.array([1.0])
@@ -133,6 +134,15 @@ class MonteCarloOption(BaseOption):
 
     def price(self, spot: [float, np.array, None] = None) -> float:
         return self._mc_pricer.price(
+            spot=spot if spot is not None else [1.0] * len(self.underlyings),
+            time_till_maturity=self.time_till_maturity,
+            risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
+            dividends_fn=self.dividends,
+            var_covar_fn=self.volatility_surface,
+        )
+
+    def std(self, spot: [float, np.array, None] = None) -> float:
+        return self._mc_pricer.std(
             spot=spot if spot is not None else [1.0] * len(self.underlyings),
             time_till_maturity=self.time_till_maturity,
             risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,

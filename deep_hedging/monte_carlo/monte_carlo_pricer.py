@@ -46,6 +46,27 @@ class MonteCarloPricer:
         instrument_payoffs = self.payoff_function(random_paths)
         return np.mean(instrument_payoffs)
 
+    def std(
+            self,
+            spot: list[float],
+            time_till_maturity: float,
+            risk_free_rate_fn: Callable[[float], float],
+            dividends_fn: Callable[[float], float],
+            var_covar_fn: Callable[[float], np.array],
+            n_paths: [int, None] = None,
+    ) -> float:
+        random_paths = self.get_paths(
+            spot=spot,
+            time_till_maturity=time_till_maturity,
+            risk_free_rate_fn=risk_free_rate_fn,
+            dividends_fn=dividends_fn,
+            var_covar_fn=var_covar_fn,
+            n_paths=n_paths,
+        )
+
+        instrument_payoffs = self.payoff_function(random_paths)
+        return np.std(instrument_payoffs)
+
     def price(
         self,
         spot: list[float],

@@ -39,7 +39,6 @@ class GBMQuantoPricer(MonteCarloPricer):
             var_covar = var_covar_fn(t)
             dividends = dividends_fn(t)
             dividends = np.concatenate([dividends, np.zeros(len(dividends))], axis=0)
-            print(risk_free_rate_fn(t).shape, dividends.shape, np.diag(var_covar).shape)
             drift.append(
                 [
                     (risk_free_rate_fn(t) - dividends - 0.5 * np.diag(var_covar))
@@ -66,7 +65,7 @@ class GBMQuantoPricer(MonteCarloPricer):
         paths = np.insert(paths, 0, np.array(spot).reshape(1, 1, -1, 1), axis=1)
         paths = np.cumprod(paths, axis=1).squeeze(3)
 
-        base_paths = paths[:, :, :n_stocks]
-        modifying_paths = paths[:, :, n_stocks:]
+        base_paths = paths[:, :, :n_stocks // 2]
+        modifying_paths = paths[:, :, n_stocks // 2:]
 
         return base_paths * modifying_paths
