@@ -4,13 +4,22 @@ from functools import lru_cache
 import numpy as np
 import pandas as pd
 
+from deep_hedging.base import Currency
+
 from deep_hedging.config.global_config import GlobalConfig
 
 
 class YieldCurve:
     def __init__(
-        self, initial_terms: np.array, create_curve_only: bool = False, *args, **kwargs
+        self,
+        initial_terms: np.array,
+        currency: str = None,
+        create_curve_only: bool = False,
+        *args,
+        **kwargs
     ) -> None:
+        self.currency = Currency[currency]
+
         self._rates_df = None
         self._discount_factors = None
         self._instant_fwd_rate = None
@@ -108,3 +117,29 @@ class YieldCurve:
     @lru_cache(maxsize=None)
     def get_instant_fwd_rate(self, term: float) -> float:
         return self._find_point(self._instant_fwd_rate, term)
+
+
+class YieldCurves:
+    def __init__(self, curves: list[YieldCurve]):
+        self.curves_list = curves
+
+        self._initialize()
+
+    def _initialize(self):
+        self._curve_dict = self._get_curve_dict(self.curves_list)
+
+    @staticmethod
+    def _get_curve_dict(curves: list[YieldCurve]) -> dict[Currency, YieldCurve]:
+        return {curve.currency: curve for curve in curves}
+
+    def __len__(self):
+        return len(self.curves_list)
+
+    def __getitem__(self, item) -> YieldCurve:
+        return self._curve_dict[Currency[item]]
+
+    def __add__(self, other):
+        return YieldCurves(self.curves_list + other.curves_list)
+
+    def __iter__(self):
+        return iter(self.curves_list)

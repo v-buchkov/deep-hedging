@@ -8,7 +8,7 @@ from deep_hedging.utils.annuity import annuity_factor
 from deep_hedging.config.global_config import GlobalConfig
 
 
-class RiskFreeBond(Instrument):
+class ZeroCouponBond(Instrument):
     def __init__(
         self,
         yield_curve: YieldCurve,

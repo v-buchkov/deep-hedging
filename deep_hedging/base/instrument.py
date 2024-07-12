@@ -1,8 +1,9 @@
 import abc
+from typing import Union
 
 import numpy as np
 
-from deep_hedging.base.position_side import PositionSide
+from deep_hedging.base.position import Position, PositionSide
 
 
 class Instrument:
@@ -33,52 +34,79 @@ class Instrument:
         return self.__repr__()
 
     def __add__(self, other):
-        return StructuredNote([(PositionSide.LONG, self), (PositionSide.LONG, other)])
+        return StructuredNote(
+            [(Position(PositionSide.LONG), self), (Position(PositionSide.LONG), other)]
+        )
 
     def __sub__(self, other):
-        return StructuredNote([(PositionSide.LONG, self), (PositionSide.SHORT, other)])
+        return StructuredNote(
+            [(Position(PositionSide.LONG), self), (Position(PositionSide.SHORT), other)]
+        )
+
+    def __mul__(self, notional):
+        return StructuredNote([(Position(PositionSide.LONG, size=notional), self)])
 
 
 class StructuredNote:
-    def __init__(
-        self, instruments: [list[tuple[PositionSide, Instrument]], None] = None
-    ):
+    def __init__(self, instruments: [list[tuple[Position, Instrument]], None] = None):
         if instruments is not None:
             self.instruments = instruments
         else:
             self.instruments = []
+
+    def __add__(self, other: Instrument):
+        self.instruments.append((Position(PositionSide.LONG), other))
+        return self
+
+    def __sub__(self, other: Instrument):
+        self.instruments.append((Position(PositionSide.SHORT), other))
+        return self
+
+    def __mul__(self, notional: Union[float, int]):
+        for position, instrument in self.instruments:
+            position.size *= notional
+        return self
 
     def coupon(
         self, frequency: float = 0.0, commission: float = 0.0, *args, **kwargs
     ) -> float:
         return sum(
             [
-                instrument.coupon(frequency, commission)
-                for _, instrument in self.instruments
+                position.size
+                * position.side.value
+                * instrument.coupon(frequency, commission)
+                for position, instrument in self.instruments
             ]
         )
 
-    def __add__(self, other: Instrument):
-        return self.instruments.append((PositionSide.LONG, other))
+    def price(self) -> float:
+        return sum(
+            [
+                position.size * position.side.value * instrument.price()
+                for position, instrument in self.instruments
+            ]
+        )
 
-    def __sub__(self, other: Instrument):
-        return self.instruments.append((PositionSide.SHORT, other))
-
-    # def price(self) -> float:
-    #     return sum([side.value * instrument.price() + instrument.pv_coupons() for side, instrument in self.instruments])
+    def pv_coupons(self) -> float:
+        return sum(
+            [
+                position.size * position.side.value * instrument.pv_coupons()
+                for position, instrument in self.instruments
+            ]
+        )
 
     def payoff(self, spot_paths: np.array) -> float:
         return sum(
             [
-                side.value * instrument.payoff(spot_paths)
-                for side, instrument in self.instruments
+                position.size * position.side.value * instrument.payoff(spot_paths)
+                for position, instrument in self.instruments
             ]
         )
 
     def __repr__(self):
         sp_str = f"StructuredNote of:\n"
-        for side, instrument in self.instruments:
-            sp_str += f"* {side} -> {instrument}\n"
+        for position, instrument in self.instruments:
+            sp_str += f"* {position.side.name} {position.size} units of {instrument}\n"
         return sp_str
 
     def __str__(self):

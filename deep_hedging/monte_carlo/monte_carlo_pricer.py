@@ -47,13 +47,13 @@ class MonteCarloPricer:
         return np.mean(instrument_payoffs)
 
     def std(
-            self,
-            spot: list[float],
-            time_till_maturity: float,
-            risk_free_rate_fn: Callable[[float], float],
-            dividends_fn: Callable[[float], float],
-            var_covar_fn: Callable[[float], np.array],
-            n_paths: [int, None] = None,
+        self,
+        spot: list[float],
+        time_till_maturity: float,
+        risk_free_rate_fn: Callable[[float], float],
+        dividends_fn: Callable[[float], float],
+        var_covar_fn: Callable[[float], np.array],
+        n_paths: [int, None] = None,
     ) -> float:
         random_paths = self.get_paths(
             spot=spot,
