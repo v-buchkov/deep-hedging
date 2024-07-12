@@ -2,6 +2,7 @@ import datetime as dt
 
 import numpy as np
 
+from deep_hedging.base.frequency import Frequency
 from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.underlyings.underlyings import Underlyings
 from deep_hedging.non_linear.monte_carlo_option import MonteCarloOption
@@ -15,10 +16,10 @@ class WorstOfDigitalCall(MonteCarloOption):
         yield_curve: YieldCurve,
         strike_level: float,
         digital_coupon: float,
-        frequency: float,
+        frequency: Frequency,
         start_date: dt.datetime,
         end_date: dt.datetime,
-        random_seed: int = None
+        random_seed: int = None,
     ):
         super().__init__(
             underlyings=underlyings,
@@ -32,7 +33,9 @@ class WorstOfDigitalCall(MonteCarloOption):
         self.frequency = frequency
 
     def payoff(self, spot_paths: np.array) -> np.array:
-        observation_days = get_periods_indices(self.time_till_maturity, self.frequency)
+        observation_days = get_periods_indices(
+            self.time_till_maturity, self.frequency.value
+        )
         coupons = np.where(
             np.all(spot_paths[:, observation_days, :] >= self.strike_level, axis=2),
             self.digital_coupon,
@@ -49,10 +52,10 @@ class WorstOfDigitalPut(MonteCarloOption):
         initial_spot: [float, list[float]],
         strike_level: float,
         digital_coupon: float,
-        frequency: float,
+        frequency: Frequency,
         start_date: dt.datetime,
         end_date: dt.datetime,
-        random_seed: int = None
+        random_seed: int = None,
     ):
         super().__init__(
             underlyings=underlyings,
@@ -67,7 +70,9 @@ class WorstOfDigitalPut(MonteCarloOption):
         self.frequency = frequency
 
     def payoff(self, spot_paths: np.array) -> np.array:
-        observation_days = get_periods_indices(self.time_till_maturity, self.frequency)
+        observation_days = get_periods_indices(
+            self.time_till_maturity, self.frequency.value
+        )
         coupons = np.where(
             np.all(spot_paths[:, observation_days, :] <= self.strike_level, axis=2),
             self.digital_coupon,

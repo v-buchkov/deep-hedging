@@ -5,3 +5,4 @@ from dataclasses import dataclass
 class Ticker:
     name: str
     code: str
+    currency: str = None

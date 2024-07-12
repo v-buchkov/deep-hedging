@@ -63,9 +63,13 @@ class Underlyings:
             for i, ticker in enumerate(self.tickers.codes):
                 if i < self.data.shape[1]:
                     if self.data.columns[i] != ticker:
-                        self.data.insert(i, column=f"{ticker}_2", value=self.data.loc[:, ticker])
+                        self.data.insert(
+                            i, column=f"{ticker}_2", value=self.data.loc[:, ticker]
+                        )
                 else:
-                    self.data.insert(i, column=f"{ticker}_2", value=self.data.loc[:, ticker])
+                    self.data.insert(
+                        i, column=f"{ticker}_2", value=self.data.loc[:, ticker]
+                    )
 
     def _resample_data(self) -> None:
         if self.data is None:
@@ -165,3 +169,12 @@ class Underlyings:
                 ]
             )
         return self.dividends
+
+    def __repr__(self):
+        s = "Underlyings:\n"
+        for ticker in self.tickers:
+            s += f"{ticker}\n"
+        return s
+
+    def __str__(self):
+        return self.__repr__()
