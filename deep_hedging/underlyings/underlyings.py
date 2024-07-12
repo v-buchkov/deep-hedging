@@ -59,18 +59,27 @@ class Underlyings:
         self.data = reader.get_data_yahoo(self.tickers.codes, self.start, self.end)[
             self.TARGET_COLUMN
         ]
+        if self.data.shape[1] != len(self.tickers.codes):
+            for i, ticker in enumerate(self.tickers.codes):
+                if i < self.data.shape[1]:
+                    if self.data.columns[i] != ticker:
+                        self.data.insert(i, column=f"{ticker}_2", value=self.data.loc[:, ticker])
+                else:
+                    self.data.insert(i, column=f"{ticker}_2", value=self.data.loc[:, ticker])
 
     def _resample_data(self) -> None:
         if self.data is None:
             self._load_yahoo()
         self.data = self.data.resample(self.sampling_period).first().dropna(axis=0)
-        self._df_returns = self.data.pct_change(fill_method=None).dropna(axis=0)
+        # self.df_returns = self.data.pct_change(fill_method=None).dropna(axis=0)
+        # self.df_returns = np.log(self.data / self.data.shift(1)).dropna(axis=0)
+        self.df_returns = (self.data / self.data.shift(1) - 1).dropna(axis=0)
 
     def plot(self) -> None:
-        n_stocks = len(self._df_returns.columns)
+        n_stocks = len(self.df_returns.columns)
 
         ax = (
-            self._df_returns.stack()
+            self.df_returns.stack()
             .reset_index()
             .rename(columns={0: "return"})
             .hist(
@@ -133,17 +142,17 @@ class Underlyings:
 
     def get_means(self) -> np.array:
         if self.means is None:
-            return self._df_returns.mean().to_numpy() * GlobalConfig.TRADING_DAYS
+            return self.df_returns.mean().to_numpy() * GlobalConfig.TRADING_DAYS
         return self.means
 
     def get_var_covar(self) -> np.array:
         if self.var_covar is None:
-            return self._df_returns.cov().to_numpy() * GlobalConfig.TRADING_DAYS
+            return self.df_returns.cov().to_numpy() * GlobalConfig.TRADING_DAYS
         return self.var_covar
 
     def get_corr(self) -> np.array:
         if self.var_covar is None:
-            return self._df_returns.corr().to_numpy()
+            return self.df_returns.corr().to_numpy()
         return corr_matrix_from_cov(self.var_covar)
 
     @lru_cache(maxsize=None)

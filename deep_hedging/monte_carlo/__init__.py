@@ -1,3 +1,4 @@
 from deep_hedging.monte_carlo.monte_carlo_pricer import MonteCarloPricer
 from deep_hedging.monte_carlo.gbm_pricer import GBMPricer
+from deep_hedging.monte_carlo.gbm_quanto_pricer import GBMQuantoPricer
 from deep_hedging.monte_carlo.heston_pricer import HestonPricer

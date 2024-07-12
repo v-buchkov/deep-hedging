@@ -6,7 +6,7 @@ from deep_hedging.monte_carlo import MonteCarloPricer
 from deep_hedging.config import GlobalConfig
 
 
-class GBMPricer(MonteCarloPricer):
+class GBMQuantoPricer(MonteCarloPricer):
     def __init__(
         self,
         payoff_function: Callable[[np.array], float],
@@ -37,9 +37,11 @@ class GBMPricer(MonteCarloPricer):
         vol_scaling = []
         for t in time:
             var_covar = var_covar_fn(t)
+            dividends = dividends_fn(t)
+            dividends = np.concatenate([dividends, np.zeros(len(dividends))], axis=0)
             drift.append(
                 [
-                    (risk_free_rate_fn(t) - dividends_fn(t) - 0.5 * np.diag(var_covar))
+                    (risk_free_rate_fn(t) - dividends - 0.5 * np.diag(var_covar))
                     * d_time
                 ]
             )
@@ -63,4 +65,7 @@ class GBMPricer(MonteCarloPricer):
         paths = np.insert(paths, 0, np.array(spot).reshape(1, 1, -1, 1), axis=1)
         paths = np.cumprod(paths, axis=1).squeeze(3)
 
-        return paths
+        base_paths = paths[:, :, :n_stocks // 2]
+        modifying_paths = paths[:, :, n_stocks // 2:]
+
+        return base_paths * modifying_paths

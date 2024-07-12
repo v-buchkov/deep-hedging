@@ -3,6 +3,7 @@ import datetime as dt
 from functools import lru_cache
 
 import numpy as np
+import pandas as pd
 
 from deep_hedging.base.instrument import Instrument
 from deep_hedging.curve.yield_curve import YieldCurve
@@ -16,7 +17,7 @@ class BaseOption(Instrument):
         self,
         underlyings: Underlyings,
         yield_curve: YieldCurve,
-        strike_level: [float, np.array],
+        strike_level: float,
         start_date: dt.datetime,
         end_date: dt.datetime,
         *args,
@@ -31,17 +32,17 @@ class BaseOption(Instrument):
         self.end_date = end_date
 
         self.time_till_maturity = (
-            self.end_date - self.start_date
-        ).days / GlobalConfig.CALENDAR_DAYS
+            pd.bdate_range(start_date, end_date).shape[0] / GlobalConfig.TRADING_DAYS
+        )
 
-    # TODO: non-constant term
+    # TODO: non-constant term + call to self.strike
     @lru_cache(maxsize=None)
     def volatility_surface(self, term: float) -> np.array:
         return self.underlyings.get_var_covar()
 
     # TODO: non-constant term
     @lru_cache(maxsize=None)
-    def _dividends(self, term: float) -> np.array:
+    def dividends(self, term: float) -> np.array:
         return self.underlyings.get_dividends()
 
     def pv_coupons(self) -> float:
@@ -91,7 +92,8 @@ class BaseOption(Instrument):
         instrument_str = f"{self.__class__.__name__}:\n"
         underlyings = "\n".join([f"-> {stock}" for stock in self.underlyings.tickers])
         instrument_str += underlyings
-        instrument_str += f"* Strike = {self.strike_level * 100}\n"
+        if hasattr(self, "strike_level"):
+            instrument_str += f"* Strike = {self.strike_level * 100}\n"
         if hasattr(self, "barrier_level"):
             instrument_str += f"* Barrier = {self.barrier_level * 100}\n"
         instrument_str += f"* Start Date = {self.start_date}\n"

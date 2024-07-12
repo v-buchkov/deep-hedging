@@ -6,7 +6,7 @@ import numpy as np
 from deep_hedging.non_linear.base_option import BaseOption
 from deep_hedging.underlyings.underlyings import Underlyings
 from deep_hedging.curve.yield_curve import YieldCurve
-from deep_hedging.monte_carlo.monte_carlo_pricer import MonteCarloPricer
+from deep_hedging.monte_carlo.gbm_pricer import GBMPricer
 
 
 class MonteCarloOption(BaseOption):
@@ -14,9 +14,10 @@ class MonteCarloOption(BaseOption):
         self,
         underlyings: Underlyings,
         yield_curve: YieldCurve,
-        strike_level: [float, np.array],
+        strike_level: float,
         start_date: dt.datetime,
         end_date: dt.datetime,
+        random_seed: int = None,
         *args,
         **kwargs,
     ):
@@ -28,7 +29,7 @@ class MonteCarloOption(BaseOption):
             end_date=end_date,
         )
 
-        self._mc_pricer = MonteCarloPricer(self.payoff)
+        self._mc_pricer = GBMPricer(self.payoff, random_seed=random_seed)
 
     def delta(
         self, spot_change: float = 0.01, spot: np.array = np.array([1.0])
@@ -92,17 +93,12 @@ class MonteCarloOption(BaseOption):
             diag[i][i] += vol_change
             new_var_covar = diag @ corr @ diag
 
-            future_value_new = self._mc_pricer.get_future_value(
-                current_spot=spot
-                if spot is not None
-                else [1.0] * len(self.underlyings),
+            price_up = self._mc_pricer.price(
+                spot=spot if spot is not None else [1.0] * len(self.underlyings),
                 time_till_maturity=self.time_till_maturity,
                 risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
-                dividends_fn=self._dividends,
+                dividends_fn=self.dividends,
                 var_covar_fn=lambda term: new_var_covar,
-            )
-            price_up = future_value_new * self.yield_curve.get_discount_factor(
-                self.time_till_maturity
             )
 
             vega.append((price_up - price_down) / vol_change)
@@ -124,17 +120,12 @@ class MonteCarloOption(BaseOption):
             corr[i + 1][i] += corr_change
             new_var_covar = diagonal @ corr @ diagonal
 
-            future_value_new = self._mc_pricer.get_future_value(
-                current_spot=spot
-                if spot is not None
-                else [1.0] * len(self.underlyings),
+            price_up = self._mc_pricer.price(
+                spot=spot if spot is not None else [1.0] * len(self.underlyings),
                 time_till_maturity=self.time_till_maturity,
                 risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
-                dividends_fn=self._dividends,
+                dividends_fn=self.dividends,
                 var_covar_fn=lambda term: new_var_covar,
-            )
-            price_up = future_value_new * self.yield_curve.get_discount_factor(
-                self.time_till_maturity
             )
 
             vega.append((price_up - price_down) / corr_change)
@@ -142,36 +133,22 @@ class MonteCarloOption(BaseOption):
         return np.array(vega)
 
     def price(self, spot: [float, np.array, None] = None) -> float:
-        future_value = self._mc_pricer.get_future_value(
-            current_spot=spot if spot is not None else [1.0] * len(self.underlyings),
+        return self._mc_pricer.price(
+            spot=spot if spot is not None else [1.0] * len(self.underlyings),
             time_till_maturity=self.time_till_maturity,
             risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
-            dividends_fn=self._dividends,
-            var_covar_fn=self.volatility_surface,
-        )
-        return future_value * self.yield_curve.get_discount_factor(
-            self.time_till_maturity
-        )
-
-    def get_paths(self, spot: [float, np.array, None] = None) -> np.array:
-        return self._mc_pricer.get_paths(
-            current_spot=spot if spot is not None else [1.0] * len(self.underlyings),
-            time_till_maturity=self.time_till_maturity,
-            risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
-            dividends_fn=self._dividends,
+            dividends_fn=self.dividends,
             var_covar_fn=self.volatility_surface,
         )
 
-    def __repr__(self):
-        instrument_str = f"{self.__class__.__name__}:\n"
-        underlyings = "\n".join([f"-> {stock}" for stock in self.underlyings.tickers])
-        instrument_str += underlyings
-        instrument_str += f"* Strike = {self.strike_level * 100}\n"
-        if hasattr(self, "barrier_level"):
-            instrument_str += f"* Barrier = {self.barrier_level * 100}\n"
-        instrument_str += f"* Start Date = {self.start_date}\n"
-        instrument_str += f"* End Date = {self.end_date}\n"
-        return instrument_str
+    def std(self, spot: [float, np.array, None] = None) -> float:
+        return self._mc_pricer.std(
+            spot=spot if spot is not None else [1.0] * len(self.underlyings),
+            time_till_maturity=self.time_till_maturity,
+            risk_free_rate_fn=self.yield_curve.get_instant_fwd_rate,
+            dividends_fn=self.dividends,
+            var_covar_fn=self.volatility_surface,
+        )
 
     @abc.abstractmethod
     def payoff(self, spot_paths: np.array) -> float:

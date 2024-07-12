@@ -5,10 +5,10 @@ from scipy.stats import norm
 
 from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.underlyings.underlyings import Underlyings
-from deep_hedging.non_linear.monte_carlo_option import MonteCarloOption
+from deep_hedging.non_linear.base_option import BaseOption
 
 
-class TwoAssetsExchange(MonteCarloOption):
+class TwoAssetsExchange(BaseOption):
     def __init__(
         self,
         underlyings: Underlyings,
@@ -24,10 +24,7 @@ class TwoAssetsExchange(MonteCarloOption):
             end_date=end_date,
         )
 
-    def _closed_out_price(self, spot_start: [float, list[float], None] = None) -> float:
-        assert (
-            isinstance(spot_start, list) and len(spot_start) == 2
-        ), "This experiment is valid for 2 assets only!"
+    def _closed_out_price(self, spot_start: np.array) -> float:
         spot1, spot2 = spot_start
 
         tau = self.time_till_maturity
@@ -44,10 +41,8 @@ class TwoAssetsExchange(MonteCarloOption):
 
         return spot1 * norm.cdf(d1) - spot2 * norm.cdf(d2)
 
-    def price(self, spot_start: [float, list[float], None] = None) -> float:
-        assert (
-            isinstance(spot_start, list) and len(spot_start) == 2
-        ), "This experiment is valid for 2 assets only!"
+    def price(self, spot_start: np.array = np.array([1.0, 1.0])) -> float:
+        assert len(spot_start) == 2, "This experiment is valid for 2 assets only!"
         return self._closed_out_price(spot_start=spot_start)
 
     def payoff(self, spot_paths: np.array) -> np.array:
