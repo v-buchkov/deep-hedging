@@ -30,7 +30,7 @@ class Forward(Instrument):
         return self.get_strike()
 
     def payoff(self, spot: [float, np.array]) -> float:
-        return spot - self.strike
+        return spot[:, -1] - self.strike
 
     def __repr__(self):
         return f"Forward(strike={self.strike}, term={self.term}, spot_ref={self.spot_price})"
