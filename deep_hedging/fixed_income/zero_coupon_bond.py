@@ -44,9 +44,9 @@ class ZeroCouponBond(Instrument):
         return 1
 
     def __repr__(self):
-        instrument_str = f"RiskFreeBond:\n"
+        instrument_str = f"ZeroCouponBond:\n"
         instrument_str += f"* Term = {round(self.time_till_maturity, 2)} years\n"
         instrument_str += f"* YTM = {round(self.yield_curve.get_rate(self.time_till_maturity) * 100, 2)}%\n"
         instrument_str += f"* Start Date = {self.start_date}\n"
-        instrument_str += f"* End Date = {self.end_date}\n"
+        instrument_str += f"* End Date = {self.end_date}"
         return instrument_str

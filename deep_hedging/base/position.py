@@ -7,6 +7,12 @@ class PositionSide(Enum):
     LONG = 1
     SHORT = -1
 
+    def invert(self):
+        if self == PositionSide.LONG:
+            return PositionSide.SHORT
+        else:
+            return PositionSide.LONG
+
 
 @dataclass
 class Position:

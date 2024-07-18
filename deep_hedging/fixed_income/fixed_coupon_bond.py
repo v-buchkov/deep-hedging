@@ -64,7 +64,7 @@ class FixedCouponBond(Instrument):
         return self.portfolio.price()
 
     def payoff(self, spot_paths: np.array) -> float:
-        return self.portfolio.payoff()
+        return self.portfolio.payoff(spot_paths)
 
     def __repr__(self):
         return self.portfolio.__repr__()

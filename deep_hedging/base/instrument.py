@@ -55,11 +55,17 @@ class StructuredNote:
             self.instruments = []
 
     def __add__(self, other: Instrument):
-        self.instruments.append((Position(PositionSide.LONG), other))
+        if isinstance(other, StructuredNote):
+            self.instruments.extend(other.instruments)
+        else:
+            self.instruments.append((Position(PositionSide.LONG), other))
         return self
 
     def __sub__(self, other: Instrument):
-        self.instruments.append((Position(PositionSide.SHORT), other))
+        if isinstance(other, StructuredNote):
+            self.instruments.extend([(position.invert(), instr) for position, instr in other.instruments])
+        else:
+            self.instruments.append((Position(PositionSide.SHORT), other))
         return self
 
     def __mul__(self, notional: Union[float, int]):
@@ -105,8 +111,8 @@ class StructuredNote:
 
     def __repr__(self):
         sp_str = f"StructuredNote of:\n"
-        for position, instrument in self.instruments:
-            sp_str += f"* {position.side.name} {position.size} units of {instrument}\n"
+        for i, (position, instrument) in enumerate(self.instruments):
+            sp_str += f"{i + 1}. {position.side.name} {round(position.size, 4)} units of {instrument}.\n\n"
         return sp_str
 
     def __str__(self):
