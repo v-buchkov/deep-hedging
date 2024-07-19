@@ -4,13 +4,14 @@ import numpy as np
 
 from deep_hedging.base.instrument import Instrument
 from deep_hedging.base.frequency import Frequency
+from deep_hedging.curve.fixed_maturity_mixin import FixedMaturityMixin
 from deep_hedging.curve.yield_curve import YieldCurve
 from deep_hedging.fixed_income.zero_coupon_bond import ZeroCouponBond
 
 from deep_hedging.config.global_config import GlobalConfig
 
 
-class FixedCouponBond(Instrument):
+class FixedCouponBond(FixedMaturityMixin, Instrument):
     def __init__(
         self,
         yield_curve: YieldCurve,
@@ -19,16 +20,13 @@ class FixedCouponBond(Instrument):
         fixed_coupon: float,
         frequency: Frequency,
     ):
-        super().__init__()
+        super().__init__(yield_curve=yield_curve, start_date=start_date, end_date=end_date, fixed_coupon=fixed_coupon, frequency=frequency)
+
         self.yield_curve = yield_curve
         self.start_date = start_date
         self.end_date = end_date
         self.fixed_coupon = fixed_coupon
         self.frequency = frequency
-
-        self.time_till_maturity = (
-            self.end_date - self.start_date
-        ).days / GlobalConfig.CALENDAR_DAYS
 
         self.portfolio = self._create_portfolio()
 

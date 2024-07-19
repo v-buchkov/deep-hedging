@@ -15,11 +15,11 @@ from deep_hedging.utils import annuity_factor
 class BaseOption(Instrument):
     def __init__(
         self,
-        underlyings: Underlyings,
         yield_curve: YieldCurve,
         strike_level: float,
         start_date: dt.datetime,
         end_date: dt.datetime,
+        underlyings: Underlyings = None,
         *args,
         **kwargs,
     ):
@@ -31,6 +31,7 @@ class BaseOption(Instrument):
         self.start_date = start_date
         self.end_date = end_date
 
+        self.days_till_maturity = (self.end_date - self.start_date).days
         self.time_till_maturity = (
             pd.bdate_range(start_date, end_date).shape[0] / GlobalConfig.TRADING_DAYS
         )
@@ -52,8 +53,8 @@ class BaseOption(Instrument):
         self, frequency: float = 0.0, commission: float = 0.0, *args, **kwargs
     ) -> float:
         if frequency > 0:
-            annual_rate = self.yield_curve.get_rate(self.time_till_maturity)
-            return (self.pv_coupons() - commission) / annuity_factor(
+            annual_rate = self.yield_curve(self.days_till_maturity)
+            return self.pv_coupons() / annuity_factor(
                 annual_rate=annual_rate,
                 frequency=frequency,
                 till_maturity=self.time_till_maturity,

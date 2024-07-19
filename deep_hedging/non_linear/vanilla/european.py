@@ -11,11 +11,11 @@ from deep_hedging.underlyings.underlyings import Underlyings
 class EuropeanCall(BaseOption):
     def __init__(
         self,
-        underlyings: Underlyings,
         yield_curve: YieldCurve,
         strike_level: [float, np.array],
         start_date: dt.datetime,
         end_date: dt.datetime,
+        underlyings: Underlyings = None,
         *args,
         **kwargs,
     ):
@@ -27,7 +27,8 @@ class EuropeanCall(BaseOption):
             end_date=end_date,
         )
 
-        self.implied_vol = np.sqrt(np.diag(self.underlyings.get_var_covar()))
+        if self.underlyings is not None:
+            self.implied_vol = np.sqrt(np.diag(self.underlyings.get_var_covar()))
 
     def payoff(self, spot: np.array) -> np.array:
         return np.maximum(spot[:, -1] - self.strike_level, 0)
@@ -163,11 +164,11 @@ class EuropeanCall(BaseOption):
 class EuropeanPut(BaseOption):
     def __init__(
         self,
-        underlyings: Underlyings,
         yield_curve: YieldCurve,
         strike_level: [float, np.array],
         start_date: dt.datetime,
         end_date: dt.datetime,
+        underlyings: Underlyings = None,
         *args,
         **kwargs,
     ):

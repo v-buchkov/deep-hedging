@@ -14,6 +14,10 @@ class Instrument:
     def discount_factor(rate: float, term: float) -> float:
         return np.exp(-rate * term)
 
+    @staticmethod
+    def discount_factor_simple(rate: float, term: float) -> float:
+        return 1 / (1 + rate) ** term
+
     @abc.abstractmethod
     def coupon(self, frequency: float = 0.0, *args, **kwargs) -> float:
         raise NotImplementedError

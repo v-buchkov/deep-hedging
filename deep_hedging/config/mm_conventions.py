@@ -1,4 +1,8 @@
+from dataclasses import dataclass
+
 from deep_hedging.base.currency import Currency
+
+from deep_hedging.config.global_config import GlobalConfig
 
 
 class DiscountingConvention:
@@ -10,13 +14,17 @@ class DiscountingConvention:
         return days / self.denominator
 
 
+@dataclass
 class DiscountingConventions:
-    def __init__(self):
-        self.dict = {
-            Currency.RUB: DiscountingConvention("ACT", 365),
-            Currency.USD: DiscountingConvention("ACT", 360),
-            Currency.EUR: DiscountingConvention("ACT", 360),
-        }
+    _dict = {
+        Currency.RUB: DiscountingConvention("ACT", 365),
+        Currency.USD: DiscountingConvention("ACT", 360),
+        Currency.EUR: DiscountingConvention("ACT", 360),
+    }
 
-    def __getitem__(self, currency: Currency) -> DiscountingConvention:
-        return self.dict[currency]
+    def __getitem__(self, item) -> DiscountingConvention:
+        if item is None:
+            return DiscountingConvention("ACT", GlobalConfig.CALENDAR_DAYS)
+        if item not in self._dict:
+            raise KeyError(f"Currency unsupported: {item}")
+        return self._dict[item]
