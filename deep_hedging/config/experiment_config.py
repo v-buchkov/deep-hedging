@@ -7,6 +7,11 @@ import torch
 
 @dataclass
 class ExperimentConfig:
+    OPT_STRIKE: float = field(
+        default=1.,
+        metadata={"docs": "Option strike, defined as % of spot level"},
+    )
+
     N_DAYS: int = field(
         default=5,
         metadata={"docs": "Number of days till maturity of the considered derivative"},

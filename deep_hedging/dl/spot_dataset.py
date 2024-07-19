@@ -10,6 +10,9 @@ import torch
 from torch.utils.data import Dataset
 
 from deep_hedging.base import Instrument
+from deep_hedging.non_linear.base_option import BaseOption
+from deep_hedging.curve.constant_rate import ConstantRateCurve
+
 from deep_hedging.config.global_config import GlobalConfig
 from deep_hedging.config.experiment_config import ExperimentConfig
 
@@ -23,10 +26,12 @@ class SpotDataset(Dataset):
         config: ExperimentConfig = ExperimentConfig(),
     ):
         self.instrument_cls = instrument_cls
-        self.n_days = 2 * n_days
+        # self.n_days = 2 * n_days
+        self.n_days = n_days
+        self.config = config
 
         self.df = (
-            self._create_df(config.DATA_ROOT, config.DATA_FILENAME)
+            self._create_df(self.config.DATA_ROOT, self.config.DATA_FILENAME)
             if data is None
             else data.copy()
         )
@@ -60,17 +65,25 @@ class SpotDataset(Dataset):
         return df
 
     def _create_instrument(self, period_df: pd.DataFrame) -> [Instrument, float]:
-        start = period_df.loc[period_df.index.min()]
+        start = period_df.index.min()
+        end = period_df.index.max()
+
+        start_df = period_df.loc[start]
         spot_start = (
-            start[GlobalConfig.BID_COLUMN] + start[GlobalConfig.ASK_COLUMN]
+            start_df[GlobalConfig.BID_COLUMN] + start_df[GlobalConfig.ASK_COLUMN]
         ) / 2
+
+        params = {
+            "yield_curve": ConstantRateCurve(rate=start_df[GlobalConfig.RATE_DOMESTIC_COLUMN] - start_df[GlobalConfig.RATE_FOREIGN_COLUMN]),
+            "start_date": start,
+            "end_date": end,
+        }
+
+        if issubclass(self.instrument_cls, BaseOption):
+            params["strike_level"] = self.config.OPT_STRIKE
+
         return (
-            self.instrument_cls(
-                rates_difference=start[GlobalConfig.RATE_DOMESTIC_COLUMN]
-                - start[GlobalConfig.RATE_FOREIGN_COLUMN],
-                spot_price=spot_start,
-                term=self.n_days / GlobalConfig.CALENDAR_DAYS,
-            ),
+            self.instrument_cls(**params),
             spot_start,
         )
 
@@ -97,7 +110,7 @@ class SpotDataset(Dataset):
         instrument, spot_start = self._create_instrument(features)
         features[GlobalConfig.SPOT_START_COLUMN] = spot_start
 
-        target = instrument.payoff(spot=features.ask.iloc[-1])
+        target = instrument.payoff(spot=np.array([features.ask.iloc[-1] / spot_start]).reshape(1, -1))[0] * spot_start
 
         return torch.Tensor(features.to_numpy()).to(torch.float32), torch.Tensor(
             [target]

@@ -4,11 +4,10 @@ import numpy as np
 
 from deep_hedging.base import Instrument
 from deep_hedging.curve.yield_curve import YieldCurve
+from deep_hedging.curve.fixed_maturity_mixin import FixedMaturityMixin
 
-from deep_hedging.config.global_config import GlobalConfig
 
-
-class Forward(Instrument):
+class Forward(FixedMaturityMixin, Instrument):
     def __init__(
             self,
             yield_curve: YieldCurve,
@@ -16,12 +15,11 @@ class Forward(Instrument):
             end_date: dt.datetime,
             strike: [float, None] = None
     ):
-        super().__init__()
+        super().__init__(yield_curve=yield_curve, start_date=start_date, end_date=end_date)
+
         self.yield_curve = yield_curve
         self.start_date = start_date
         self.end_date = end_date
-
-        self.time_till_maturity = (self.end_date - self.start_date).days / GlobalConfig.CALENDAR_DAYS
 
         if strike is None:
             self.strike = float(self.get_strike()[0])

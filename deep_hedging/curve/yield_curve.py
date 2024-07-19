@@ -4,8 +4,9 @@ from functools import lru_cache
 import numpy as np
 import pandas as pd
 
-from deep_hedging.base import Currency
+from deep_hedging.base.currency import Currency
 
+from deep_hedging.config.mm_conventions import DiscountingConventions
 from deep_hedging.config.global_config import GlobalConfig
 
 
@@ -18,7 +19,10 @@ class YieldCurve:
         *args,
         **kwargs
     ) -> None:
-        self.currency = Currency[currency]
+        if currency is not None:
+            self.currency = Currency[currency]
+        else:
+            self.currency = None
 
         self._rates_df = None
         self._discount_factors = None
@@ -27,6 +31,7 @@ class YieldCurve:
         self.create_curve_only = create_curve_only
 
         self._initialize(initial_terms)
+        self.discounting_conventions = DiscountingConventions()
 
     def _initialize(self, terms: np.array) -> None:
         self.create_curve(terms=terms)
@@ -117,6 +122,11 @@ class YieldCurve:
     @lru_cache(maxsize=None)
     def get_instant_fwd_rate(self, term: float) -> float:
         return self._find_point(self._instant_fwd_rate, term)
+
+    @lru_cache(maxsize=None)
+    def __call__(self, days: int) -> float:
+        term = self.discounting_conventions[self.currency](days)
+        return self.get_rate(term)
 
 
 class YieldCurves:
