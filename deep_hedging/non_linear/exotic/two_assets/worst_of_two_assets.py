@@ -34,6 +34,10 @@ class WorstOfCallTwoAssets(BaseOption):
         dist = multivariate_normal(mean=None, cov=var_covar)
         return dist.cdf(np.array([upper_limit1, upper_limit2]))
 
+    @staticmethod
+    def discount_factor(rate: float, term: float) -> float:
+        return np.exp(-rate * term)
+
     def _closed_out_price(self, spot_start: np.array) -> float:
         """Using notation from (Stulz, 1982)"""
         self.strike_level = self.strike_level + 1e-12
