@@ -46,7 +46,7 @@ class WorstOfCallTwoAssets(BaseOption):
         corr = var_covar[0, 1] / (vol_v * vol_h)
         vol_joint = np.sqrt(vol_v**2 + vol_h**2 - 2 * corr * vol_v * vol_h)
 
-        rate = self.yield_curve.get_rate(tau)
+        rate = self.yield_curve.rate(tau)
 
         gamma1 = (np.log(h / self.strike_level) + (rate - vol_h**2 / 2) * tau) / (
             vol_h * np.sqrt(tau)
@@ -130,7 +130,7 @@ class WorstOfPutTwoAssets(BaseOption):
         assert len(spot_start) == 2, "This experiment is valid for 2 assets only!"
 
         tau = self.time_till_maturity
-        rate = self.yield_curve.get_rate(tau)
+        rate = self.yield_curve.rate(tau)
         discount_factor = self.discount_factor(rate, tau)
 
         worst_of_spot = WorstOfCallTwoAssets(

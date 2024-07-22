@@ -20,7 +20,13 @@ class FixedCouponBond(FixedMaturityMixin, Instrument):
         fixed_coupon: float,
         frequency: Frequency,
     ):
-        super().__init__(yield_curve=yield_curve, start_date=start_date, end_date=end_date, fixed_coupon=fixed_coupon, frequency=frequency)
+        super().__init__(
+            yield_curve=yield_curve,
+            start_date=start_date,
+            end_date=end_date,
+            fixed_coupon=fixed_coupon,
+            frequency=frequency,
+        )
 
         self.yield_curve = yield_curve
         self.start_date = start_date

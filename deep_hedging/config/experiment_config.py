@@ -8,7 +8,7 @@ import torch
 @dataclass
 class ExperimentConfig:
     OPT_STRIKE: float = field(
-        default=1.,
+        default=1.0,
         metadata={"docs": "Option strike, defined as % of spot level"},
     )
 

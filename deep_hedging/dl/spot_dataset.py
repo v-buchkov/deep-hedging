@@ -74,7 +74,10 @@ class SpotDataset(Dataset):
         ) / 2
 
         params = {
-            "yield_curve": ConstantRateCurve(rate=start_df[GlobalConfig.RATE_DOMESTIC_COLUMN] - start_df[GlobalConfig.RATE_FOREIGN_COLUMN]),
+            "yield_curve": ConstantRateCurve(
+                constant_rate=start_df[GlobalConfig.RATE_DOMESTIC_COLUMN]
+                - start_df[GlobalConfig.RATE_FOREIGN_COLUMN]
+            ),
             "start_date": start,
             "end_date": end,
         }
@@ -110,7 +113,12 @@ class SpotDataset(Dataset):
         instrument, spot_start = self._create_instrument(features)
         features[GlobalConfig.SPOT_START_COLUMN] = spot_start
 
-        target = instrument.payoff(spot=np.array([features.ask.iloc[-1] / spot_start]).reshape(1, -1))[0] * spot_start
+        target = (
+            instrument.payoff(
+                spot=np.array([features.ask.iloc[-1] / spot_start]).reshape(1, -1)
+            )[0]
+            * spot_start
+        )
 
         return torch.Tensor(features.to_numpy()).to(torch.float32), torch.Tensor(
             [target]

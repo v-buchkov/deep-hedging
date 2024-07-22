@@ -14,10 +14,6 @@ class Instrument:
     def discount_factor(rate: float, term: float) -> float:
         return np.exp(-rate * term)
 
-    @staticmethod
-    def discount_factor_simple(rate: float, term: float) -> float:
-        return 1 / (1 + rate) ** term
-
     @abc.abstractmethod
     def coupon(self, frequency: float = 0.0, *args, **kwargs) -> float:
         raise NotImplementedError
@@ -67,7 +63,9 @@ class StructuredNote:
 
     def __sub__(self, other: Instrument):
         if isinstance(other, StructuredNote):
-            self.instruments.extend([(position.invert(), instr) for position, instr in other.instruments])
+            self.instruments.extend(
+                [(position.invert(), instr) for position, instr in other.instruments]
+            )
         else:
             self.instruments.append((Position(PositionSide.SHORT), other))
         return self

@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class Frequency(Enum):
+    CONTINUOUS = None
     DAILY = 1 / 365
     WEEKLY = 1 / 52
     MONTHLY = 1 / 12

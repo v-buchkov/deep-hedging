@@ -34,7 +34,7 @@ class EuropeanCall(BaseOption):
         return np.maximum(spot[:, -1] - self.strike_level, 0)
 
     def price(self, spot: np.array = np.array([1.0])) -> float:
-        rf_rate = self.yield_curve.get_rate(self.time_till_maturity)
+        rf_rate = self.yield_curve.rate(self.time_till_maturity)
 
         d1 = (
             np.log(spot / self.strike_level)
@@ -62,7 +62,7 @@ class EuropeanCall(BaseOption):
 
         d1 = (
             np.log(spot / self.strike_level)
-            + (self.yield_curve.get_rate(till_maturity) + self.implied_vol**2 / 2)
+            + (self.yield_curve.rate(till_maturity) + self.implied_vol**2 / 2)
             * till_maturity
         ) / (self.implied_vol * np.sqrt(till_maturity))
 
@@ -81,7 +81,7 @@ class EuropeanCall(BaseOption):
 
         d1 = (
             np.log(spot / self.strike_level)
-            + (self.yield_curve.get_rate(till_maturity) + self.implied_vol**2 / 2)
+            + (self.yield_curve.rate(till_maturity) + self.implied_vol**2 / 2)
             * till_maturity
         ) / (self.implied_vol * np.sqrt(till_maturity))
 
@@ -100,7 +100,7 @@ class EuropeanCall(BaseOption):
 
         d1 = (
             np.log(spot / self.strike_level)
-            + (self.yield_curve.get_rate(till_maturity) + self.implied_vol**2 / 2)
+            + (self.yield_curve.rate(till_maturity) + self.implied_vol**2 / 2)
             * till_maturity
         ) / (self.implied_vol * np.sqrt(till_maturity))
 
@@ -117,7 +117,7 @@ class EuropeanCall(BaseOption):
         if till_maturity is None:
             till_maturity = self.time_till_maturity
 
-        rf_rate = self.yield_curve.get_rate(till_maturity)
+        rf_rate = self.yield_curve.rate(till_maturity)
 
         d1 = (
             np.log(spot / self.strike_level)
@@ -143,7 +143,7 @@ class EuropeanCall(BaseOption):
         if till_maturity is None:
             till_maturity = self.time_till_maturity
 
-        rf_rate = self.yield_curve.get_rate(till_maturity)
+        rf_rate = self.yield_curve.rate(till_maturity)
 
         d1 = (
             np.log(spot / self.strike_level)
@@ -197,7 +197,7 @@ class EuropeanPut(BaseOption):
             - spot
             + self.strike_level
             * np.exp(
-                -self.yield_curve.get_rate(self.time_till_maturity)
+                -self.yield_curve.rate(self.time_till_maturity)
                 * self.time_till_maturity
             )
         )
@@ -244,7 +244,7 @@ class EuropeanPut(BaseOption):
         if till_maturity is None:
             till_maturity = self.time_till_maturity
 
-        rf_rate = self.yield_curve.get_rate(till_maturity)
+        rf_rate = self.yield_curve.rate(till_maturity)
         # Assuming that [dS/dt = 0]
         return self.european_call.theta(
             time_change=time_change, spot=spot
@@ -259,5 +259,5 @@ class EuropeanPut(BaseOption):
         return self.european_call.rho(
             rate_change=rate_change, spot=spot, till_maturity=till_maturity
         ) - self.strike_level * till_maturity * np.exp(
-            -self.yield_curve.get_rate(till_maturity) * till_maturity
+            -self.yield_curve.rate(till_maturity) * till_maturity
         )

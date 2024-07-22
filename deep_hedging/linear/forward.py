@@ -9,13 +9,15 @@ from deep_hedging.curve.fixed_maturity_mixin import FixedMaturityMixin
 
 class Forward(FixedMaturityMixin, Instrument):
     def __init__(
-            self,
-            yield_curve: YieldCurve,
-            start_date: dt.datetime,
-            end_date: dt.datetime,
-            strike: [float, None] = None
+        self,
+        yield_curve: YieldCurve,
+        start_date: dt.datetime,
+        end_date: dt.datetime,
+        strike: [float, None] = None,
     ):
-        super().__init__(yield_curve=yield_curve, start_date=start_date, end_date=end_date)
+        super().__init__(
+            yield_curve=yield_curve, start_date=start_date, end_date=end_date
+        )
 
         self.yield_curve = yield_curve
         self.start_date = start_date
@@ -32,26 +34,29 @@ class Forward(FixedMaturityMixin, Instrument):
     def pv_coupons(self) -> float:
         return 0
 
-    def _get_discount_factors(self, times: [np.array, None] = None) -> np.array:
-        if times is None:
-            return self.discount_factor(
-                rate=-self.yield_curve.get_rate(self.time_till_maturity), term=self.time_till_maturity
-            )
-        else:
-            return self.discount_factor(
-                rate=-self.yield_curve.get_rate(times), term=times
-            )
+    def _get_discount_factors(self, days: [np.array, None] = None) -> np.array:
+        # if days is None:
+        #     return self.yield_curve_borrow.pv_discount_factors(self.days_till_maturity) / self.yield_curve_place.pv_discount_factors(self.days_till_maturity)
+        # else:
+        #     return self.yield_curve_borrow.pv_discount_factors(days) / self.yield_curve_place.pv_discount_factors(days)
+        return 1
 
-    def get_strike(self, spot_price: np.array = np.array([1.]), times: [np.array, None] = None) -> np.array:
-        return spot_price * self._get_discount_factors(times)
+    def get_strike(
+        self, spot_price: np.array = np.array([1.0]), days: [np.array, None] = None
+    ) -> np.array:
+        return spot_price * self._get_discount_factors(days)
 
-    def price(self, spot: np.array = np.array([1.]), times: [np.array, None] = None) -> float:
-        strikes = self.get_strike(spot, times)
+    def price(
+        self, spot: np.array = np.array([1.0]), days: [np.array, None] = None
+    ) -> float:
+        strikes = self.get_strike(spot, days)
         intrinsic_value = strikes - self.strike
-        return intrinsic_value * self._get_discount_factors(times)
+        return intrinsic_value * self._get_discount_factors(days)
 
     def payoff(self, spot: np.array) -> float:
-        assert spot.ndim > 1, f"If the array consists of one spot-ref only, use .reshape(1, -1)"
+        assert (
+            spot.ndim > 1
+        ), f"If the array consists of one spot-ref only, use .reshape(1, -1)"
         return spot[:, -1] - self.strike
 
     def __repr__(self):

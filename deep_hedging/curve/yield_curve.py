@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 
 from deep_hedging.base.currency import Currency
+from deep_hedging.base.frequency import Frequency
 
 from deep_hedging.config.mm_conventions import DiscountingConventions
 from deep_hedging.config.global_config import GlobalConfig
@@ -16,6 +17,7 @@ class YieldCurve:
         initial_terms: np.array,
         currency: str = None,
         create_curve_only: bool = False,
+        compounding_frequency: Frequency = Frequency.CONTINUOUS,
         *args,
         **kwargs
     ) -> None:
@@ -29,6 +31,7 @@ class YieldCurve:
         self._instant_fwd_rate = None
 
         self.create_curve_only = create_curve_only
+        self.compounding_frequency = compounding_frequency
 
         self._initialize(initial_terms)
         self.discounting_conventions = DiscountingConventions()
@@ -37,7 +40,7 @@ class YieldCurve:
         self.create_curve(terms=terms)
 
     @abc.abstractmethod
-    def get_rates(self, terms: list[float]) -> np.array:
+    def get_rates(self, terms: np.array) -> np.array:
         pass
 
     def create_curve(self, terms: list[float]) -> None:
@@ -107,26 +110,55 @@ class YieldCurve:
         return self._instant_fwd_rate
 
     @staticmethod
-    def _find_point(curve: pd.DataFrame, term: float) -> float:
-        index = np.absolute(curve.index - term).argmin()
-        return curve.iloc[index].values[0]
+    def _find_point(curve: pd.DataFrame, term: np.array) -> np.array:
+        index = np.absolute(curve.index.to_numpy().reshape(-1, 1) - term).argmin(axis=0)
+        if isinstance(term, int) or isinstance(term, float):
+            return curve.iloc[index].values.item()
+        return curve.iloc[index].values
 
-    @lru_cache(maxsize=None)
-    def get_rate(self, term: float) -> float:
+    def rate(self, term: [float, np.array]) -> [float, np.array]:
         return self._find_point(self._rates_df, term)
 
-    @lru_cache(maxsize=None)
-    def get_discount_factor(self, term: float) -> float:
-        return self._find_point(self._discount_factors, term)
+    def pv_discount_factors(self, days: [int, np.array]) -> [float, np.array]:
+        term = self.discounting_conventions[self.currency](days)
+        rates = self.rate(term)
+        if not isinstance(rates, float) and rates.shape[1] == 1:
+            rates = rates.squeeze(1)
+        if self.compounding_frequency is Frequency.CONTINUOUS:
+            return np.exp(-rates * term)
+        else:
+            return 1 / (1 + rates * self.compounding_frequency.value) ** (
+                term / self.compounding_frequency.value
+            )
 
-    @lru_cache(maxsize=None)
-    def get_instant_fwd_rate(self, term: float) -> float:
-        return self._find_point(self._instant_fwd_rate, term)
+    def fv_discount_factors(self, days: [int, np.array]) -> [float, np.array]:
+        return 1 / self.pv_discount_factors(days)
+
+    def get_instant_fwd_rate(self, terms: np.array) -> np.array:
+        if not isinstance(terms, float) and terms.ndim == 1:
+            terms = terms[np.newaxis, :]
+        return self._find_point(self._instant_fwd_rate, terms)
+
+    def to_present_value(
+        self, future_value: [float, np.array], days: [int, np.array]
+    ) -> float:
+        pv = future_value * self.pv_discount_factors(days)
+        if not isinstance(pv, float):
+            return pv.item()
+        return pv
+
+    def to_future_value(
+        self, present_value: [float, np.array], days: [int, np.array]
+    ) -> float:
+        fv = present_value * self.fv_discount_factors(days)
+        if not isinstance(fv, float):
+            return fv.item()
+        return fv
 
     @lru_cache(maxsize=None)
     def __call__(self, days: int) -> float:
         term = self.discounting_conventions[self.currency](days)
-        return self.get_rate(term)
+        return self.rate(term)
 
 
 class YieldCurves:
@@ -141,6 +173,10 @@ class YieldCurves:
     @staticmethod
     def _get_curve_dict(curves: list[YieldCurve]) -> dict[Currency, YieldCurve]:
         return {curve.currency: curve for curve in curves}
+
+    @lru_cache(maxsize=None)
+    def discount_factors(self, currency: Currency, days: int) -> float:
+        return self._curve_dict[currency].pv_discount_factors(days)
 
     def __len__(self):
         return len(self.curves_list)

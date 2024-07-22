@@ -44,29 +44,31 @@ class QuantoOption:
         )
 
     # TODO: non-constant vol
-    def volatility_surface(self, t: np.array) -> np.array:
-        return self.underlyings.get_var_covar()
+    def volatility_surface(self, terms: np.array) -> np.array:
+        return np.array([self.underlyings.get_var_covar()] * len(terms))
 
-    @lru_cache
-    def risk_free_rate(self, t: np.array, currency: str = None) -> np.array:
+    def risk_free_rate(self, terms: np.array, currency: str = None) -> np.array:
         if currency is None:
             currency = self.option.yield_curve.currency.value
-        return self.yield_curves[currency].get_instant_fwd_rate(t)
+        return self.yield_curves[currency].get_instant_fwd_rate(terms)
 
-    @lru_cache
     def dividends(self, t: np.array) -> np.array:
         dividends = self.option.dividends(t)
         fx_rates = np.array(
             [-self.option.yield_curve.get_instant_fwd_rate(t)]
             * len(self.modifying_underlyings)
-        )
-        return np.concatenate([dividends, fx_rates], axis=0)
+        ).reshape(len(t), len(self.modifying_underlyings))
+        return np.concatenate([dividends, fx_rates], axis=1)
 
     def price(self, spot: [float, np.array, None] = None) -> float:
-        return self._quanto_pricer.price(
+        fv = self._quanto_pricer.future_value(
             spot=spot if spot is not None else [1.0] * len(self.underlyings),
             time_till_maturity=self.option.time_till_maturity,
             risk_free_rate_fn=self.risk_free_rate,
             dividends_fn=self.dividends,
             var_covar_fn=self.volatility_surface,
+        )
+
+        return self.option.yield_curve.to_present_value(
+            fv, self.option.days_till_maturity
         )

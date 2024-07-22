@@ -2,15 +2,17 @@ from dataclasses import dataclass
 import datetime as dt
 
 import numpy as np
+import pandas as pd
 
 from deep_hedging.base.instrument import Instrument
 from deep_hedging.base.frequency import Frequency
-from deep_hedging.curve.yield_curve import YieldCurve
+from deep_hedging.curve.yield_curve import YieldCurve, YieldCurves
+from deep_hedging.curve.fixed_maturity_mixin import FixedMaturityMixin
 from deep_hedging.fixed_income.zero_coupon_bond import ZeroCouponBond
 from deep_hedging.linear.forward import Forward
-from deep_hedging.utils.fixing_dates import get_annual_indices
+from deep_hedging.utils.fixing_dates import generate_schedule, days_from_schedule
 
-from deep_hedging.config.global_config import GlobalConfig
+from deep_hedging.config.mm_conventions import DiscountingConventions
 
 
 @dataclass
@@ -20,55 +22,65 @@ class CommodityBondSolution:
     fixed_coupon: float
 
 
-class CommodityBond(Instrument):
+class CommodityBond(FixedMaturityMixin, Instrument):
     def __init__(
-            self,
-            yield_curve: YieldCurve,
-            start_date: dt.datetime,
-            end_date: dt.datetime,
-            frequency: Frequency,
-            yield_curve_commodity: YieldCurve,
+        self,
+        yield_curve: YieldCurve,
+        start_date: dt.datetime,
+        end_date: dt.datetime,
+        frequency: Frequency,
+        yield_curve_commodity: YieldCurve,
+        forward_yield_curves: [YieldCurves, None] = None,
     ):
-        super().__init__()
+        super().__init__(
+            yield_curve, start_date, end_date, frequency, yield_curve_commodity
+        )
         self.yield_curve = yield_curve
         self.start_date = start_date
         self.end_date = end_date
         self.frequency = frequency
 
         self.yield_curve_commodity = yield_curve_commodity
+        self.forward_yield_curves = forward_yield_curves
 
-        self.time_till_maturity = (self.end_date - self.start_date).days / GlobalConfig.CALENDAR_DAYS
+        self.schedule = generate_schedule(start_date, end_date, frequency)
 
-        self.factors = get_annual_indices(
-            self.time_till_maturity,
-            self.frequency,
-        )
+        self._days = days_from_schedule(self.schedule)
+        self._cumsum_days = np.cumsum(self._days)
 
+        self._initialize()
+
+    def _initialize(self):
         self._no_arb_solution = self._solve_by_no_arbitrage()
         self.fixed_coupon = self._no_arb_solution.fixed_coupon
         self.portfolio = self._create_portfolio(self._no_arb_solution)
 
-    def _create_coefficients_matrix(self, factors: np.array) -> np.array:
-        k_0 = np.array([[1.] * len(factors) + [0.]])
-        k_other = []
-        for i, factor in enumerate(factors):
-            line = [0.] * (len(factors) + 1)
-            line[i] = (1 + self.yield_curve.get_rate(factor)) ** factor
-            line[-1] = -(1 + self.yield_curve_commodity.get_rate(factor)) ** factor
-            k_other.append(line)
+    def substitute_schedule(self, new_schedule: list[pd.Timestamp]) -> None:
+        self.schedule = new_schedule
+        self._initialize()
 
-        k_other = np.array(k_other)
-        k = np.concatenate([k_0, k_other], axis=0)
+    def _create_coefficients_matrix(self) -> np.array:
+        coefs = np.zeros((len(self._days), len(self._days) + 1))
+        for i, days in enumerate(self._cumsum_days):
+            coefs[i, i] = self.yield_curve.fv_discount_factors(days)
+            coefs[i, -1] = -self.yield_curve_commodity.fv_discount_factors(days)
 
-        return k
+        coefs = np.concatenate(
+            [np.array([[1.0] * len(self._days) + [0.0]]), coefs], axis=0
+        )
+        return coefs
 
-    def _create_total_sums_vectors(self, factors: np.array):
-        maturity_period = factors[-1]
-        return np.array([1.] + [0.] * (len(factors) - 1) + [(1 + self.yield_curve_commodity.get_rate(maturity_period)) ** maturity_period])
+    def _create_total_sums_vectors(self):
+        maturity_days = self._cumsum_days[-1]
+        return np.array(
+            [1.0]
+            + [0.0] * (len(self._days) - 1)
+            + [self.yield_curve_commodity.fv_discount_factors(maturity_days)]
+        )
 
     def _solve_by_no_arbitrage(self) -> CommodityBondSolution:
-        coefficients = self._create_coefficients_matrix(self.factors)
-        total_sums = self._create_total_sums_vectors(self.factors)
+        coefficients = self._create_coefficients_matrix()
+        total_sums = self._create_total_sums_vectors()
 
         x = np.linalg.solve(coefficients, total_sums)
 
@@ -81,11 +93,14 @@ class CommodityBond(Instrument):
         return solution
 
     def _create_portfolio(self, no_arb_solution: CommodityBondSolution):
-        portfolio = ZeroCouponBond(
-            yield_curve=self.yield_curve,
-            start_date=self.start_date,
-            end_date=self.end_date,
-        ) * no_arb_solution.zcb_body_weight
+        portfolio = (
+            ZeroCouponBond(
+                yield_curve=self.yield_curve,
+                start_date=self.start_date,
+                end_date=self.end_date,
+            )
+            * no_arb_solution.zcb_body_weight
+        )
 
         portfolio += Forward(
             yield_curve=self.yield_curve,
@@ -93,20 +108,23 @@ class CommodityBond(Instrument):
             end_date=self.end_date,
         ) * (1 + no_arb_solution.fixed_coupon)
 
-        for i, point in enumerate(self.factors[:-1]):
+        for i, date in enumerate(self.schedule[1:-1]):
             portfolio += (
-                    ZeroCouponBond(
-                        yield_curve=self.yield_curve,
-                        start_date=self.start_date,
-                        end_date=self.start_date + dt.timedelta(days=int(round(point * GlobalConfig.CALENDAR_DAYS))),
-                    )
-                    * no_arb_solution.zcb_coupon_weights[i]
+                ZeroCouponBond(
+                    yield_curve=self.yield_curve,
+                    start_date=self.start_date,
+                    end_date=date,
+                )
+                * no_arb_solution.zcb_coupon_weights[i]
             )
-            portfolio += Forward(
-                yield_curve=self.yield_curve,
-                start_date=self.start_date,
-                end_date=self.start_date + dt.timedelta(days=int(round(point * GlobalConfig.CALENDAR_DAYS))),
-            ) * no_arb_solution.fixed_coupon
+            portfolio += (
+                Forward(
+                    yield_curve=self.yield_curve,
+                    start_date=self.start_date,
+                    end_date=date,
+                )
+                * no_arb_solution.fixed_coupon
+            )
 
         return portfolio
 
