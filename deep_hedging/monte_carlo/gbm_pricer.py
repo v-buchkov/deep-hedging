@@ -18,9 +18,9 @@ class GBMPricer(MonteCarloPricer):
         self,
         spot: list[float],
         time_till_maturity: float,
-        risk_free_rate_fn: Callable[[float], np.array],
-        dividends_fn: Callable[[float], np.array],
-        var_covar_fn: Callable[[float], np.array],
+        risk_free_rate_fn: Callable[[np.array], np.array],
+        dividends_fn: Callable[[np.array], np.array],
+        var_covar_fn: Callable[[np.array], np.array],
         n_paths: [int, None] = None,
     ) -> np.array:
         days_till_maturity = int(round(GlobalConfig.TRADING_DAYS * time_till_maturity))
@@ -33,22 +33,18 @@ class GBMPricer(MonteCarloPricer):
         time = np.linspace(0, time_till_maturity, days_till_maturity)
         d_time = time[1] - time[0]
 
-        drift = []
-        vol_scaling = []
-        for t in time:
-            var_covar = var_covar_fn(t)
-            drift.append(
-                [
-                    (risk_free_rate_fn(t) - dividends_fn(t) - 0.5 * np.diag(var_covar))
-                    * d_time
-                ]
-            )
-            if len(spot) == 1:
-                vol_scaling.append(np.sqrt(np.diag(var_covar)))
-            else:
-                vol_scaling.append(np.linalg.cholesky(var_covar))
-
+        var_covar = var_covar_fn(time)
+        if n_stocks == 1:
+            vols = var_covar[:, np.newaxis]
+        else:
+            vols = np.diagonal(var_covar, axis1=1, axis2=2)
+        drift = (risk_free_rate_fn(time) - dividends_fn(time) - 0.5 * vols) * d_time
         drift = np.array(drift).reshape(1, len(time), n_stocks, 1)
+
+        if len(spot) == 1:
+            vol_scaling = np.sqrt(vols)
+        else:
+            vol_scaling = np.linalg.cholesky(var_covar)
         vol_scaling = np.array(vol_scaling).reshape(1, len(time), n_stocks, n_stocks)
 
         if self.random_seed is not None:

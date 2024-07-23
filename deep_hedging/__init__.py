@@ -9,6 +9,7 @@ from deep_hedging.underlyings import Ticker, Tickers, Underlyings
 from deep_hedging.curve.yield_curve import YieldCurves
 from deep_hedging.fixed_income import ZeroCouponBond, FixedCouponBond
 from deep_hedging.linear import Forward
+from deep_hedging.linear.fx_forward import FXForward
 from deep_hedging.non_linear import EuropeanCall, EuropeanPut
 
 from deep_hedging.curve.constant_rate import ConstantRateCurve

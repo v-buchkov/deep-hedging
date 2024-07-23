@@ -23,9 +23,9 @@ class GBMQuantoPricer(MonteCarloPricer):
         self,
         spot: list[float],
         time_till_maturity: float,
-        risk_free_rate_fn: Callable[[str, float], np.array],
-        dividends_fn: Callable[[float], np.array],
-        var_covar_fn: Callable[[float], np.array],
+        risk_free_rate_fn: Callable[[np.array, str], np.array],
+        dividends_fn: Callable[[np.array], np.array],
+        var_covar_fn: Callable[[np.array], np.array],
         n_paths: [int, None] = None,
     ) -> np.array:
         days_till_maturity = int(round(GlobalConfig.TRADING_DAYS * time_till_maturity))
@@ -38,30 +38,31 @@ class GBMQuantoPricer(MonteCarloPricer):
         time = np.linspace(0, time_till_maturity, days_till_maturity)
         d_time = time[1] - time[0]
 
-        drift = []
-        vol_scaling = []
         base_ccys = [ticker.currency for ticker in self.base_underlyings.tickers]
         fx_ccys = [ticker.currency for ticker in self.modifying_underlyings.tickers]
-        for t in time:
-            rf_rates = [risk_free_rate_fn(t, ccy) for ccy in base_ccys]
-            rf_rates += [-risk_free_rate_fn(t, ccy) for ccy in fx_ccys]
 
-            var_covar = var_covar_fn(t)
+        rf_rates = np.stack([risk_free_rate_fn(time, ccy) for ccy in base_ccys])
+        rf_rates = np.concatenate(
+            [rf_rates, np.array([-risk_free_rate_fn(time, ccy) for ccy in fx_ccys])],
+            axis=0,
+        ).reshape(len(time), -1)
 
-            dividends = dividends_fn(t)
-            if len(dividends) < var_covar.shape[0]:
-                dividends = np.concatenate(
-                    [dividends, np.zeros(var_covar.shape[0] - len(dividends))], axis=0
-                )
+        var_covar = var_covar_fn(time)
+        dividends = dividends_fn(time)
+        if len(dividends) < var_covar.shape[0]:
+            dividends = np.concatenate(
+                [dividends, np.zeros(var_covar.shape[0] - len(dividends))], axis=0
+            )
 
-            drift.append([(rf_rates - dividends - 0.5 * np.diag(var_covar)) * d_time])
-
-            if len(spot) == 1:
-                vol_scaling.append(np.sqrt(np.diag(var_covar)))
-            else:
-                vol_scaling.append(np.linalg.cholesky(var_covar))
-
+        drift = (
+            rf_rates - dividends - 0.5 * np.diagonal(var_covar, axis1=1, axis2=2)
+        ) * d_time
         drift = np.array(drift).reshape(1, len(time), n_stocks, 1)
+
+        if len(spot) == 1:
+            vol_scaling = np.sqrt(np.diagonal(var_covar, axis1=1, axis2=2))
+        else:
+            vol_scaling = np.linalg.cholesky(var_covar)
         vol_scaling = np.array(vol_scaling).reshape(1, len(time), n_stocks, n_stocks)
 
         if self.random_seed is not None:

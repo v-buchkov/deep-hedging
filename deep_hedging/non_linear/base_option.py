@@ -7,12 +7,12 @@ import pandas as pd
 
 from deep_hedging.base.instrument import Instrument
 from deep_hedging.curve.yield_curve import YieldCurve
+from deep_hedging.curve.fixed_maturity_mixin import FixedMaturityMixin
 from deep_hedging.underlyings.underlyings import Underlyings
-from deep_hedging.config.global_config import GlobalConfig
 from deep_hedging.utils import annuity_factor
 
 
-class BaseOption(Instrument):
+class BaseOption(FixedMaturityMixin, Instrument):
     def __init__(
         self,
         yield_curve: YieldCurve,
@@ -23,7 +23,11 @@ class BaseOption(Instrument):
         *args,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(
+            yield_curve=yield_curve,
+            start_date=start_date,
+            end_date=end_date,
+        )
 
         self.underlyings = underlyings
         self.yield_curve = yield_curve
@@ -31,20 +35,17 @@ class BaseOption(Instrument):
         self.start_date = start_date
         self.end_date = end_date
 
-        self.days_till_maturity = (self.end_date - self.start_date).days
-        self.time_till_maturity = (
-            pd.bdate_range(start_date, end_date).shape[0] / GlobalConfig.TRADING_DAYS
-        )
-
     # TODO: non-constant term + call to self.strike
-    @lru_cache(maxsize=None)
-    def volatility_surface(self, term: float) -> np.array:
-        return self.underlyings.get_var_covar()
+    def volatility_surface(self, term: np.array) -> np.array:
+        if isinstance(term, float) or isinstance(term, int):
+            return self.underlyings.get_var_covar()
+        return np.array([self.underlyings.get_var_covar()] * len(term))
 
     # TODO: non-constant term
-    @lru_cache(maxsize=None)
-    def dividends(self, term: float) -> np.array:
-        return self.underlyings.get_dividends()
+    def dividends(self, term: np.array) -> np.array:
+        if isinstance(term, float) or isinstance(term, int):
+            return self.underlyings.get_dividends()
+        return np.array([self.underlyings.get_dividends()] * len(term))
 
     def pv_coupons(self) -> float:
         return self.price()

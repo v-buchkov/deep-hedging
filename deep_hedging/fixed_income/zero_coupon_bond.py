@@ -15,7 +15,9 @@ class ZeroCouponBond(FixedMaturityMixin, Instrument):
         start_date: dt.datetime,
         end_date: dt.datetime,
     ):
-        super().__init__(yield_curve=yield_curve, start_date=start_date, end_date=end_date)
+        super().__init__(
+            yield_curve=yield_curve, start_date=start_date, end_date=end_date
+        )
 
         self.yield_curve = yield_curve
         self.start_date = start_date
@@ -34,10 +36,12 @@ class ZeroCouponBond(FixedMaturityMixin, Instrument):
             )
         return 0
 
-    def price(self):
-        return self.discount_factor_simple(rate=self.ytm, term=self.time_till_maturity)
+    def price(self, spot_paths: np.array = np.array([1.0])):
+        return self.yield_curve.to_present_value(
+            self.payoff(spot_paths=spot_paths), self.days_till_maturity
+        )
 
-    def payoff(self, spot_paths: np.array) -> float:
+    def payoff(self, spot_paths: np.array = np.array([1.0])) -> float:
         return 1
 
     @property
@@ -46,6 +50,8 @@ class ZeroCouponBond(FixedMaturityMixin, Instrument):
 
     def __repr__(self):
         instrument_str = f"ZeroCouponBond:\n"
+        if self.yield_curve.currency is not None:
+            instrument_str += f"* CCY = {self.yield_curve.currency}\n"
         instrument_str += f"* Term = {round(self.time_till_maturity, 2)} years\n"
         instrument_str += f"* YTM = {round(self.ytm * 100, 2)}%\n"
         instrument_str += f"* Start Date = {self.start_date}\n"

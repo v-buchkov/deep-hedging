@@ -42,15 +42,7 @@ class WorstOfDigitalCall(MonteCarloOption):
             self.digital_coupon,
             0,
         )
-
-        dfs = np.array(
-            [1.0]
-            + [
-                1 / self.discount_factor(self.yield_curve.get_rate(period), period)
-                for period in periods
-            ]
-        )
-        coupons = coupons * dfs
+        coupons = self.apply_discounting(coupons, observation_days)
 
         return coupons.sum(axis=1)
 
@@ -90,14 +82,6 @@ class WorstOfDigitalPut(MonteCarloOption):
             self.digital_coupon,
             0,
         )
-
-        dfs = np.array(
-            [1.0]
-            + [
-                1 / self.discount_factor(self.yield_curve.get_rate(period), period)
-                for period in periods
-            ]
-        )
-        coupons = coupons * dfs
+        coupons = self.apply_discounting(coupons, observation_days)
 
         return coupons.sum(axis=1)

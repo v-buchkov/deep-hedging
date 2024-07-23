@@ -34,6 +34,10 @@ class WorstOfCallTwoAssets(BaseOption):
         dist = multivariate_normal(mean=None, cov=var_covar)
         return dist.cdf(np.array([upper_limit1, upper_limit2]))
 
+    @staticmethod
+    def discount_factor(rate: float, term: float) -> float:
+        return np.exp(-rate * term)
+
     def _closed_out_price(self, spot_start: np.array) -> float:
         """Using notation from (Stulz, 1982)"""
         self.strike_level = self.strike_level + 1e-12
@@ -46,7 +50,7 @@ class WorstOfCallTwoAssets(BaseOption):
         corr = var_covar[0, 1] / (vol_v * vol_h)
         vol_joint = np.sqrt(vol_v**2 + vol_h**2 - 2 * corr * vol_v * vol_h)
 
-        rate = self.yield_curve.get_rate(tau)
+        rate = self.yield_curve.rate(tau)
 
         gamma1 = (np.log(h / self.strike_level) + (rate - vol_h**2 / 2) * tau) / (
             vol_h * np.sqrt(tau)
@@ -126,11 +130,15 @@ class WorstOfPutTwoAssets(BaseOption):
         dist = multivariate_normal(mean=None, cov=var_covar)
         return dist.cdf(np.array([upper_limit1, upper_limit2]))
 
+    @staticmethod
+    def discount_factor(rate: float, term: float) -> float:
+        return np.exp(-rate * term)
+
     def price(self, spot_start: np.array = np.array([1.0, 1.0])) -> float:
         assert len(spot_start) == 2, "This experiment is valid for 2 assets only!"
 
         tau = self.time_till_maturity
-        rate = self.yield_curve.get_rate(tau)
+        rate = self.yield_curve.rate(tau)
         discount_factor = self.discount_factor(rate, tau)
 
         worst_of_spot = WorstOfCallTwoAssets(
