@@ -1,5 +1,6 @@
 import abc
 from typing import Union
+from copy import deepcopy
 
 import numpy as np
 
@@ -39,16 +40,46 @@ class Instrument:
             [(Position(PositionSide.LONG), self), (Position(PositionSide.SHORT), other)]
         )
 
-    def __mul__(self, notional):
-        return StructuredNote([(Position(PositionSide.LONG, size=notional), self)])
+    def __mul__(self, notional: Union[float, int]):
+        if notional >= 0:
+            return StructuredNote([(Position(PositionSide.LONG, size=notional), self)])
+        else:
+            return StructuredNote([(Position(PositionSide.SHORT, size=notional), self)])
+
+    def __truediv__(self, notional: Union[float, int]):
+        if notional >= 0:
+            return StructuredNote(
+                [(Position(PositionSide.LONG, size=1 / notional), self)]
+            )
+        else:
+            return StructuredNote(
+                [(Position(PositionSide.SHORT, size=1 / notional), self)]
+            )
 
 
 class StructuredNote:
-    def __init__(self, instruments: [list[tuple[Position, Instrument]], None] = None):
+    def __init__(
+        self,
+        instruments: [list[tuple[Position, Instrument]], None] = None,
+        *args,
+        **kwargs,
+    ):
+        self.instruments = []
         if instruments is not None:
-            self.instruments = instruments
-        else:
-            self.instruments = []
+            for position, instrument in instruments:
+                if isinstance(instrument, StructuredNote):
+                    sub_instruments = []
+                    for internal_pos, internal_inst in instrument.instruments:
+                        internal_pos *= position.size
+                        sub_instruments.append((internal_pos, internal_inst))
+                    self.instruments.extend(sub_instruments)
+                else:
+                    self.instruments.append((position, instrument))
+
+        self._current = 0
+        self._days_till_maturity = None
+
+        self._scaled = 1
 
     def __add__(self, other: Instrument):
         if isinstance(other, StructuredNote):
@@ -67,8 +98,15 @@ class StructuredNote:
         return self
 
     def __mul__(self, notional: Union[float, int]):
+        self._scaled *= notional
         for position, instrument in self.instruments:
             position.size *= notional
+        return self
+
+    def __truediv__(self, notional: Union[float, int]):
+        self._scaled /= notional
+        for position, instrument in self.instruments:
+            position.size /= notional
         return self
 
     def coupon(
@@ -99,13 +137,33 @@ class StructuredNote:
             ]
         )
 
-    def payoff(self, spot_paths: np.array) -> float:
-        return sum(
-            [
-                position.size * position.side.value * instrument.payoff(spot_paths)
-                for position, instrument in self.instruments
-            ]
-        )
+    @property
+    def days_till_maturity(self) -> int:
+        if self._days_till_maturity is None:
+            days = []
+            for position, instrument in self.instruments:
+                if hasattr(instrument, "days_till_maturity"):
+                    days.append(instrument.days_till_maturity)
+                else:
+                    self._days_till_maturity = -1
+                    return self._days_till_maturity
+            self._days_till_maturity = max(days)
+        return self._days_till_maturity
+
+    def payoff(self, spot: np.array) -> np.array:
+        assert (
+            spot.ndim > 1
+        ), f"If the array consists of one path only, use .reshape(1, -1).\nIf each path consists of one value only, use .reshape(-1, 1)."
+        payoff = np.zeros(spot.shape)
+        for position, instrument in self.instruments:
+            if hasattr(instrument, "days_till_maturity"):
+                days = instrument.days_till_maturity
+            else:
+                days = spot.shape[1]
+            payoff[:, days - 1] += (
+                position.size * position.side.value * instrument.payoff(spot[:, :days])
+            )
+        return payoff
 
     def __repr__(self):
         sp_str = f"StructuredNote of:\n"
@@ -115,3 +173,12 @@ class StructuredNote:
 
     def __str__(self):
         return self.__repr__()
+
+    def __getitem__(self, item):
+        return self.instruments[item]
+
+    def __iter__(self):
+        return iter(self.instruments)
+
+    def __next__(self):
+        return next(self)

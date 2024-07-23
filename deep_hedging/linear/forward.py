@@ -34,29 +34,33 @@ class Forward(FixedMaturityMixin, Instrument):
     def pv_coupons(self) -> float:
         return 0
 
-    def _get_discount_factors(self, days: [np.array, None] = None) -> np.array:
-        # if days is None:
-        #     return self.yield_curve_borrow.pv_discount_factors(self.days_till_maturity) / self.yield_curve_place.pv_discount_factors(self.days_till_maturity)
-        # else:
-        #     return self.yield_curve_borrow.pv_discount_factors(days) / self.yield_curve_place.pv_discount_factors(days)
-        return 1
-
     def get_strike(
         self, spot_price: np.array = np.array([1.0]), days: [np.array, None] = None
     ) -> np.array:
-        return spot_price * self._get_discount_factors(days)
+        if days is None:
+            days = self.days_till_maturity
+        return spot_price * self.yield_curve.fv_discount_factors(days)
 
     def price(
         self, spot: np.array = np.array([1.0]), days: [np.array, None] = None
     ) -> float:
+        if days is None:
+            days = self.days_till_maturity
+
         strikes = self.get_strike(spot, days)
         intrinsic_value = strikes - self.strike
-        return intrinsic_value * self._get_discount_factors(days)
+        price = intrinsic_value * self.yield_curve.pv_discount_factors(days)
+        if len(price) == 1:
+            return price.item()
+        else:
+            return price
 
-    def payoff(self, spot: np.array) -> float:
+    def payoff(self, spot: np.array = np.array([[1.0]])) -> float:
+        if isinstance(spot, float) or isinstance(spot, int):
+            return spot - self.strike
         assert (
             spot.ndim > 1
-        ), f"If the array consists of one spot-ref only, use .reshape(1, -1)"
+        ), f"If the array consists of one path only, use .reshape(1, -1).\nIf each path consists of one value only, use .reshape(-1, 1)."
         return spot[:, -1] - self.strike
 
     def __repr__(self):

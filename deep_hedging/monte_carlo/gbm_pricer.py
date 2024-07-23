@@ -38,9 +38,7 @@ class GBMPricer(MonteCarloPricer):
             vols = var_covar[:, np.newaxis]
         else:
             vols = np.diagonal(var_covar, axis1=1, axis2=2)
-        drift = (
-            risk_free_rate_fn(time) - dividends_fn(time) - 0.5 * vols
-        ) * d_time
+        drift = (risk_free_rate_fn(time) - dividends_fn(time) - 0.5 * vols) * d_time
         drift = np.array(drift).reshape(1, len(time), n_stocks, 1)
 
         if len(spot) == 1:
