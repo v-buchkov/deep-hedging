@@ -160,6 +160,8 @@ class StructuredNote:
                 days = instrument.days_till_maturity
             else:
                 days = spot.shape[1]
+            if hasattr(instrument, "strike"):
+                print(instrument.__class__.__name__, position.size * instrument.strike)
             payoff[:, days - 1] += (
                 position.size * position.side.value * instrument.payoff(spot[:, :days])
             )

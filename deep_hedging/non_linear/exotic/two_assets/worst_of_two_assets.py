@@ -130,6 +130,10 @@ class WorstOfPutTwoAssets(BaseOption):
         dist = multivariate_normal(mean=None, cov=var_covar)
         return dist.cdf(np.array([upper_limit1, upper_limit2]))
 
+    @staticmethod
+    def discount_factor(rate: float, term: float) -> float:
+        return np.exp(-rate * term)
+
     def price(self, spot_start: np.array = np.array([1.0, 1.0])) -> float:
         assert len(spot_start) == 2, "This experiment is valid for 2 assets only!"
 
