@@ -62,7 +62,7 @@ class CommodityBond(StructuredNote):
     def get_daily_payments(self, spot_fixings: np.array) -> np.array:
         assert (
             len(self._cumsum_days) + 1 == spot_fixings.shape[0]
-        ), f"Instrument has {len(self._cumsum_days)} fixings, while {spot_fixings.shape[0]} spot points were provided!"
+        ), f"Instrument has {len(self._cumsum_days) + 1} fixings, while {spot_fixings.shape[0]} spot points were provided!"
         spot_fixings = spot_fixings / spot_fixings[0]
         spot = np.zeros((1, self.days_till_maturity))
         for i, days in enumerate(self._cumsum_days):
@@ -145,23 +145,21 @@ class CommodityBond(StructuredNote):
 
         instruments = instruments * self._scaled
         self.instruments = instruments.instruments
-        # self._effective_yield = self.calc_effective_yield()
+        self._effective_yield = self.calc_effective_yield()
 
     def coupon(self, frequency: float = 0.0, *args, **kwargs) -> float:
         return self.fixed_coupon
 
     def calc_effective_yield(self) -> float:
-        spot_fixings = []
+        spot_fixings = np.zeros((1, self.days_till_maturity))
         for _, instrument in self.instruments:
             if isinstance(instrument, Forward):
-                spot_fixings.append(instrument.strike)
-                # print(instrument.strike)
-        payments = self.get_daily_payments(np.array(spot_fixings))
+                spot_fixings[:, instrument.days_till_maturity - 1] = instrument.strike
+        payments = self.payoff(np.array(spot_fixings))
         _, payments_idx = np.where(payments != 0)
         discount_factors = self.yield_curve.pv_discount_factors(payments_idx + 1)
         payments = payments[:, payments_idx] * discount_factors
-        # print(np.concatenate([[self.price()], payments.squeeze(0)]))
-        # print(npf.irr(np.concatenate([[-self.price()], payments.squeeze(0)])))
+        return npf.irr(np.concatenate([[-self.price()], payments.squeeze(0)]))
 
     @property
     def effective_yield(self):
