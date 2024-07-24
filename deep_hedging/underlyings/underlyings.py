@@ -4,15 +4,12 @@ from functools import lru_cache
 import numpy as np
 import pandas as pd
 
-import pandas_datareader.data as reader
 import yfinance as yfin
 
 from deep_hedging.underlyings.ticker import Ticker
 from deep_hedging.underlyings.tickers import Tickers
 from deep_hedging.utils.linalg import corr_matrix_from_cov
 from deep_hedging.config.global_config import GlobalConfig
-
-yfin.pdr_override()
 
 
 class Underlyings:
@@ -56,7 +53,7 @@ class Underlyings:
             self._resample_data()
 
     def _load_yahoo(self) -> None:
-        self.data = reader.get_data_yahoo(self.tickers.codes, self.start, self.end)[
+        self.data = yfin.download(self.tickers.codes, self.start, self.end)[
             self.TARGET_COLUMN
         ]
         if self.data.shape[1] != len(self.tickers.codes):
