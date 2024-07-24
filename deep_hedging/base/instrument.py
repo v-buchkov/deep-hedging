@@ -154,14 +154,14 @@ class StructuredNote:
         assert (
             spot.ndim > 1
         ), f"If the array consists of one path only, use .reshape(1, -1).\nIf each path consists of one value only, use .reshape(-1, 1)."
-        payoff = np.zeros(spot.shape)
+        payoff = np.zeros((spot.shape[0], spot.shape[1] - 1))
         for position, instrument in self.instruments:
             if hasattr(instrument, "days_till_maturity"):
                 days = instrument.days_till_maturity
             else:
-                days = spot.shape[1]
+                days = spot.shape[1] - 1
             payoff[:, days - 1] += (
-                position.size * position.side.value * instrument.payoff(spot[:, :days])
+                position.size * position.side.value * instrument.payoff(spot[:, :days + 1])
             )
         return payoff
 

@@ -9,7 +9,7 @@ NRU Higher School of Economics
 ## Install
 
 ```
-pip install deep_hedging
+pip install deep-hedging
 ```
 
 ## Deep Learning Example

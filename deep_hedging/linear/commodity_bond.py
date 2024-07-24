@@ -32,16 +32,16 @@ class CommodityBond(StructuredNote):
     ):
         super().__init__(instruments=[])
         self.yield_curve = yield_curve
-        self.start_date = start_date
-        self.end_date = end_date
         self.frequency = frequency
 
         self.yield_curve_commodity = yield_curve_commodity
         self.forward_yield_curves = forward_yield_curves
 
-        self._days_till_maturity = (end_date - start_date).days
-
         self.schedule = generate_schedule(start_date, end_date, frequency)
+        self.start_date = pd.to_datetime(self.schedule[0])
+        self.end_date = pd.to_datetime(self.schedule[-1])
+
+        self._days_till_maturity = (self.end_date - self.start_date).days
 
         self._effective_yield = None
 
@@ -64,9 +64,9 @@ class CommodityBond(StructuredNote):
             len(self._cumsum_days) + 1 == spot_fixings.shape[0]
         ), f"Instrument has {len(self._cumsum_days) + 1} fixings, while {spot_fixings.shape[0]} spot points were provided!"
         spot_fixings = spot_fixings / spot_fixings[0]
-        spot = np.zeros((1, self.days_till_maturity))
+        spot = np.zeros((1, self.days_till_maturity + 1))
         for i, days in enumerate(self._cumsum_days):
-            spot[:, days - 1] = spot_fixings[i + 1]
+            spot[:, days] = spot_fixings[i + 1]
         payments = self.payoff(spot)
         return payments
 
@@ -151,10 +151,10 @@ class CommodityBond(StructuredNote):
         return self.fixed_coupon
 
     def calc_effective_yield(self) -> float:
-        spot_fixings = np.zeros((1, self.days_till_maturity))
+        spot_fixings = np.zeros((1, self.days_till_maturity + 1))
         for _, instrument in self.instruments:
             if isinstance(instrument, Forward):
-                spot_fixings[:, instrument.days_till_maturity - 1] = instrument.strike
+                spot_fixings[:, instrument.days_till_maturity] = instrument.strike
         payments = self.payoff(np.array(spot_fixings))
         _, payments_idx = np.where(payments != 0)
         discount_factors = self.yield_curve.pv_discount_factors(payments_idx + 1)

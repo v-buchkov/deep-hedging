@@ -1,5 +1,8 @@
 import datetime as dt
 
+import pandas as pd
+from pandas.tseries.offsets import BDay
+
 from deep_hedging.curve.yield_curve import YieldCurve
 
 from deep_hedging.config.mm_conventions import DiscountingConventions
@@ -21,7 +24,11 @@ class FixedMaturityMixin:
             *args,
             **kwargs
         )
-        self.days_till_maturity = (end_date - start_date).days
+
+        self.start_date = start_date + 0 * BDay()
+        self.end_date = end_date + 0 * BDay()
+
+        self.days_till_maturity = (self.end_date - self.start_date).days
         self.time_till_maturity = DiscountingConventions()[yield_curve.currency](
             self.days_till_maturity
         )

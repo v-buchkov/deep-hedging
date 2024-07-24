@@ -92,10 +92,11 @@ class BaseOption(FixedMaturityMixin, Instrument):
 
     def __repr__(self):
         instrument_str = f"{self.__class__.__name__}:\n"
+        instrument_str += "* Underlyings:\n"
         underlyings = "\n".join([f"-> {stock}" for stock in self.underlyings.tickers])
         instrument_str += underlyings
         if hasattr(self, "strike_level"):
-            instrument_str += f"* Strike = {self.strike_level * 100}\n"
+            instrument_str += f"\n* Strike = {self.strike_level * 100}\n"
         if hasattr(self, "barrier_level"):
             instrument_str += f"* Barrier = {self.barrier_level * 100}\n"
         instrument_str += f"* Start Date = {self.start_date}\n"

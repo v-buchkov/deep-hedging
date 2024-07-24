@@ -3,6 +3,7 @@ from enum import Enum
 
 import numpy as np
 import pandas as pd
+from pandas.tseries.offsets import BDay
 
 from deep_hedging.config.global_config import GlobalConfig
 
@@ -71,7 +72,7 @@ def generate_schedule(
         dates.append(
             start
             + dt.timedelta(days=int(point))
-            + pd.offsets.BusinessDay(normalize=True)
+            + 0 * BDay()
         )
 
     return dates
