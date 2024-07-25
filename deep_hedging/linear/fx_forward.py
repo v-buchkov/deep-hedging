@@ -42,7 +42,11 @@ class FXForward(FixedMaturityMixin, Instrument):
     ) -> np.array:
         if days is None:
             days = self.days_till_maturity
-        return spot_price * self.yield_curve_quote.fv_discount_factors(days) / self.yield_curve_base.fv_discount_factors(days)
+        return (
+            spot_price
+            * self.yield_curve_quote.fv_discount_factors(days)
+            / self.yield_curve_base.fv_discount_factors(days)
+        )
 
     def price(
         self, spot: np.array = np.array([1.0]), days: [np.array, None] = None
@@ -52,7 +56,11 @@ class FXForward(FixedMaturityMixin, Instrument):
 
         strikes = self.get_strike(spot, days)
         intrinsic_value = strikes - self.strike
-        price = intrinsic_value * self.yield_curve_quote.pv_discount_factors(days) / self.yield_curve_base.pv_discount_factors(days)
+        price = (
+            intrinsic_value
+            * self.yield_curve_quote.pv_discount_factors(days)
+            / self.yield_curve_base.pv_discount_factors(days)
+        )
         if len(price) == 1:
             return price.item()
         else:

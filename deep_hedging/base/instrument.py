@@ -161,7 +161,9 @@ class StructuredNote:
             else:
                 days = spot.shape[1] - 1
             payoff[:, days - 1] += (
-                position.size * position.side.value * instrument.payoff(spot[:, :days + 1])
+                position.size
+                * position.side.value
+                * instrument.payoff(spot[:, : days + 1])
             )
         return payoff
 

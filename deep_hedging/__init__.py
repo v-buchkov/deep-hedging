@@ -18,3 +18,5 @@ from deep_hedging.curve.nss import NelsonSiegelCurve
 from deep_hedging.dl.spot_dataset import SpotDataset
 from deep_hedging.dl.models import MLPHedger, LSTMHedger, LSTMHedgerTexts
 from deep_hedging.dl.baselines import BaselineForward, BaselineEuropeanCall
+
+from deep_hedging.hedger.hedge_simulator import HedgeSimulator

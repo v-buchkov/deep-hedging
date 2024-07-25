@@ -69,11 +69,7 @@ def generate_schedule(
 
     dates = []
     for point in points:
-        dates.append(
-            start
-            + dt.timedelta(days=int(point))
-            + 0 * BDay()
-        )
+        dates.append(start + dt.timedelta(days=int(point)) + 0 * BDay())
 
     return dates
 
