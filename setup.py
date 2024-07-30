@@ -42,6 +42,7 @@ setup(
         "numpy",
         "numpy-financial",
         "pandas",
+        "scikit-learn",
         "torch",
         "matplotlib",
         "tqdm",

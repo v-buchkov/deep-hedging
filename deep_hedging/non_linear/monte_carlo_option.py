@@ -6,7 +6,7 @@ import numpy as np
 from deep_hedging.non_linear.base_option import BaseOption
 from deep_hedging.underlyings.underlyings import Underlyings
 from deep_hedging.curve.yield_curve import YieldCurve
-from deep_hedging.monte_carlo.gbm_pricer import GBMPricer
+from deep_hedging.monte_carlo.spot.gbm_simulator import GBMSimulator
 
 
 class MonteCarloOption(BaseOption):
@@ -29,7 +29,7 @@ class MonteCarloOption(BaseOption):
             end_date=end_date,
         )
 
-        self._mc_pricer = GBMPricer(self.payoff, random_seed=random_seed)
+        self._mc_pricer = GBMSimulator(self.payoff, random_seed=random_seed)
 
     def delta(
         self, spot_change: float = 0.01, spot: np.array = np.array([1.0])
