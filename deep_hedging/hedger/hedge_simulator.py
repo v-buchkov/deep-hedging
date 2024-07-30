@@ -120,7 +120,7 @@ class HedgeSimulator:
             rates_borrow=rates_borrow,
             rates_lend=rates_lend,
         )
-        return np.mean(pnl - payoff)
+        return np.mean(payoff - pnl)
 
     def std(
             self,

@@ -2,11 +2,12 @@ from typing import Callable
 
 import numpy as np
 
-from deep_hedging.monte_carlo import MonteCarloPricer
+from deep_hedging.monte_carlo.spot.monte_carlo_simulator import MonteCarloSimulator
+
 from deep_hedging.config import GlobalConfig
 
 
-class GBMPricer(MonteCarloPricer):
+class GBMSimulator(MonteCarloSimulator):
     def __init__(
         self,
         payoff_function: Callable[[np.array], float],

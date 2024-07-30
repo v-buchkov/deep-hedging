@@ -4,7 +4,7 @@ from typing import Callable
 import numpy as np
 
 
-class MonteCarloPricer:
+class MonteCarloSimulator:
     def __init__(
         self,
         payoff_function: Callable[[np.array], float],
@@ -22,6 +22,8 @@ class MonteCarloPricer:
         dividends_fn: Callable[[float], float],
         var_covar_fn: Callable[[float], np.array],
         n_paths: [int, None] = None,
+        *args,
+        **kwargs,
     ) -> np.array:
         raise NotImplementedError
 
