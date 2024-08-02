@@ -1,31 +1,17 @@
 import numpy as np
 import pandas as pd
 
-from deep_hedging.monte_carlo.rates.vasicek_simulator import VasicekSimulator
-from deep_hedging.curve.yield_curve import YieldCurve
+from deep_hedging.monte_carlo.volatility.volatility_simulator import VolatilitySimulator
 
 
-class HullWhiteSimulator(VasicekSimulator):
-    MU_COLUMN = "mu"
-
+class HullWhiteVolatilitySimulator(VolatilitySimulator):
     def __init__(
-        self,
-        target_column: str = "close",
-        random_seed: [int, None] = None,
+            self,
+            random_seed: [int, None] = None,
     ) -> None:
-        super().__init__(target_column=target_column, random_seed=random_seed)
+        super().__init__(random_seed=random_seed)
 
-        self._mu_curve = None
-
-    def mu_(self, t: float) -> float:
-        if self._mu_curve is None:
-            raise ValueError(
-                "Model is not calibrated to the market yet! Call .calibrate_mu(yield_curve) first."
-            )
-        index = np.absolute(self._mu_curve[:, 0] - t).argmin()
-        return self._mu_curve[index, 1]
-
-    def calibrate_mu(self, yield_curve: YieldCurve) -> None:
+    def calibrate_mu(self, volatility_smile: ...) -> None:
         t_old = yield_curve.instant_fwd_rate.index[0]
         fwd_rate_old = yield_curve.instant_fwd_rate.iloc[0, 0]
         mu = []
@@ -34,11 +20,11 @@ class HullWhiteSimulator(VasicekSimulator):
 
             # TODO: check that not constant
             mu_bootstrapped = (
-                dfwd_rate
-                + self.lambda_(t) * fwd_rate
-                + self.sigma**2
-                / (2 * self.lambda_(t))
-                * (1 - np.exp(-2 * self.lambda_(t) * t))
+                    dfwd_rate
+                    + self.lambda_(t) * fwd_rate
+                    + self.sigma**2
+                    / (2 * self.lambda_(t))
+                    * (1 - np.exp(-2 * self.lambda_(t) * t))
             )
             # According to https://quant.stackexchange.com/questions/38739/how-to-get-set-the-theta-function-in-the-hull-white-model-to-replicate-the-curre
             # , we estimate theta(t) * kappa (under "Slightly rewriting your SDE") => need to divide by kappa <=> divide by lambda in this notation

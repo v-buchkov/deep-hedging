@@ -14,17 +14,7 @@ class MonteCarloSimulator:
         self.random_seed = random_seed
 
     @abc.abstractmethod
-    def get_paths(
-        self,
-        spot: list[float],
-        time_till_maturity: float,
-        risk_free_rate_fn: Callable[[float], float],
-        dividends_fn: Callable[[float], float],
-        var_covar_fn: Callable[[float], np.array],
-        n_paths: [int, None] = None,
-        *args,
-        **kwargs,
-    ) -> np.array:
+    def get_paths(self, *args, **kwargs) -> np.array:
         raise NotImplementedError
 
     def future_value(

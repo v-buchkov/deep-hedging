@@ -5,19 +5,19 @@ import pandas as pd
 
 from deep_hedging.utils.plot_rates import plot_rates
 
+from deep_hedging.config.global_config import GlobalConfig
+
 
 class InterestRateSimulator:
     CALENDAR_DAYS = 365
     DEFAULT_TEST_LENGTH = 0.25
 
     def __init__(
-            self,
-            target_column: str = "close",
-            n_paths: int = 100,
-            random_seed: [int, None] = None,
+        self,
+        target_column: str = "close",
+        random_seed: [int, None] = None,
     ) -> None:
         self.target_column = target_column
-        self.n_paths = n_paths
         self.random_seed = random_seed
 
         self.model = None
@@ -45,24 +45,27 @@ class InterestRateSimulator:
     def sigma(self, sigma: float) -> None:
         self._sigma = sigma
 
-    def simulate(self, r0: float, terms: list[float]) -> np.array:
+    def simulate(
+        self,
+        r0: float,
+        terms: list[float],
+        noise: np.array = None,
+        n_paths: int = GlobalConfig.MONTE_CARLO_PATHS,
+    ) -> np.array:
         if self.random_seed is not None:
             np.random.seed(self.random_seed)
 
         paths = []
-        for _ in range(self.n_paths):
+        noise = np.random.normal(scale=self.sigma, size=(n_paths, len(terms))) if noise is None else noise
+        for p in range(n_paths):
             path = [r0]
-            for _ in terms:
-                path.append(
-                    (
-                            self.get_simulation_drift(path[-1], terms=tuple([1] * 2))
-                            + np.random.normal(scale=self.sigma)
-                    ).tolist()[0]
-                )
+            for i in range(len(terms)):
+                # TODO: rates volatility
+                path.append((self.get_simulation_drift(path[-1], terms=tuple([1] * 2)) + noise[p, i]).item())
             paths.append(path[1:])
         return np.array(paths)
 
-    def run_simulation(self, *args, **kwargs) -> None:
+    def run_simulation(self, noise: np.array = None, *args, **kwargs) -> None:
         if "data" in kwargs.keys():
             data = kwargs.get("data")
         elif len(args) > 0:
@@ -95,6 +98,7 @@ class InterestRateSimulator:
                 .cumsum()
                 .to_list()
             ),
+            noise=noise,
         )
         simulated = pd.DataFrame(
             simulated.T, columns=[self.target_column] * simulated.shape[0]

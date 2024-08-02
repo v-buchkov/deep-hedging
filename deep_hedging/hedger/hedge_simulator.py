@@ -7,10 +7,16 @@ from deep_hedging.base import Instrument, StructuredNote
 
 class HedgingMode(Enum):
     DELTA = "delta"
+    NEURAL = "neural"
 
 
 class HedgeSimulator:
-    def __init__(self, instrument: [Instrument, StructuredNote], hedging_mode: str = None, look_ahead: bool = False):
+    def __init__(
+        self,
+        instrument: [Instrument, StructuredNote],
+        hedging_mode: str = None,
+        look_ahead: bool = False,
+    ):
         self.instrument = instrument
 
         if hedging_mode is None:
@@ -63,8 +69,12 @@ class HedgeSimulator:
 
         all_weights = []
         for instrument in instruments:
-            if hasattr(instrument, "time_till_maturity") and hasattr(instrument, self.hedging_mode.value):
-                till_maturity = np.linspace(instrument.time_till_maturity, 1e-6, mid.shape[1])
+            if hasattr(instrument, "time_till_maturity") and hasattr(
+                instrument, self.hedging_mode.value
+            ):
+                till_maturity = np.linspace(
+                    instrument.time_till_maturity, 1e-6, mid.shape[1]
+                )
 
                 hedging_fn = getattr(instrument, self.hedging_mode.value)
 
@@ -72,7 +82,9 @@ class HedgeSimulator:
                 for day in range(mid.shape[1]):
                     weights_path.append(
                         list(
-                            hedging_fn(spot=mid[:, day], till_maturity=till_maturity[day]).flatten()
+                            hedging_fn(
+                                spot=mid[:, day], till_maturity=till_maturity[day]
+                            ).flatten()
                         )
                     )
                 all_weights.append(weights_path)
@@ -80,11 +92,11 @@ class HedgeSimulator:
         return np.array(all_weights).T.sum(axis=2)
 
     def simulate(
-            self,
-            bids: np.array,
-            asks: np.array,
-            rates_borrow: np.array,
-            rates_lend: np.array,
+        self,
+        bids: np.array,
+        asks: np.array,
+        rates_borrow: np.array,
+        rates_lend: np.array,
     ) -> [np.array, np.array]:
         mid = (bids + asks) / 2
 
@@ -108,11 +120,11 @@ class HedgeSimulator:
         return pnl, payoff
 
     def price(
-            self,
-            bids: np.array,
-            asks: np.array,
-            rates_borrow: np.array,
-            rates_lend: np.array,
+        self,
+        bids: np.array,
+        asks: np.array,
+        rates_borrow: np.array,
+        rates_lend: np.array,
     ) -> float:
         pnl, payoff = self.simulate(
             bids=bids,
@@ -123,11 +135,11 @@ class HedgeSimulator:
         return np.mean(payoff - pnl)
 
     def std(
-            self,
-            bids: np.array,
-            asks: np.array,
-            rates_borrow: np.array,
-            rates_lend: np.array,
+        self,
+        bids: np.array,
+        asks: np.array,
+        rates_borrow: np.array,
+        rates_lend: np.array,
     ) -> float:
         pnl, payoff = self.simulate(
             bids=bids,

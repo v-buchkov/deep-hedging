@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 
 
 def plot_rates(
-        data: pd.Series,
-        simulated: [pd.DataFrame, None] = None,
-        opacity: float = 0.03,
-        quantiles: tuple[float] = (0.05, 0.5, 0.95),
+    data: pd.Series,
+    simulated: [pd.DataFrame, None] = None,
+    opacity: float = 0.03,
+    quantiles: tuple[float] = (0.05, 0.5, 0.95),
 ) -> None:
     plt.figure(figsize=(14, 7))
 
