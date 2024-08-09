@@ -28,22 +28,24 @@ class CorrelatedHestonSimulator(MonteCarloSimulator):
         self,
         spot: list[float],
         bid_ask_spread: list[float],
+        vol_start: list[float],
         rf_rate: float,
         time_till_maturity: float,
         risk_free_rate_fn: Callable[[np.array], np.array],
         dividends_fn: Callable[[np.array], np.array],
+        bid_ask_spread_var_covar_fn: Callable[[np.array], np.array],
         corr_fn: Callable[[np.array], np.array],
         n_paths: [int, None] = None,
         *args,
         **kwargs
-    ) -> tuple[np.array, np.array]:
+    ) -> tuple[np.array, np.array, np.array]:
         days_till_maturity = int(round(GlobalConfig.TRADING_DAYS * time_till_maturity))
 
         if n_paths is None:
             n_paths = GlobalConfig.MONTE_CARLO_PATHS
 
         n_stocks = len(spot)
-        noise_size = 3 * n_stocks + 1  # n_stocks + n_bid_asks = n_stocks + n_vols = n_stocks + rates
+        noise_size = 2 * n_stocks + 2  # n_stocks + n_vols = n_stocks + bid_ask + rates
 
         time = np.linspace(0, time_till_maturity, days_till_maturity)
         d_time = time[1] - time[0]
@@ -59,13 +61,20 @@ class CorrelatedHestonSimulator(MonteCarloSimulator):
 
         spot_noise = noise[:, :, :n_stocks, :]
         vol_noise = noise[:, :, n_stocks:2 * n_stocks, :]
-        bid_ask_noise = noise[:, :, 2 * n_stocks:3 * n_stocks, :]
-        rates_noise = noise[:, :, -1, :]
+        bid_ask_noise = np.expand_dims(noise[:, :, -2, :], 2)
+        rates_noise = np.expand_dims(noise[:, :, -1, :], 2)
 
-        volatility = self.volatility_simulator.get_paths(noise=vol_noise)
+        volatility = self.volatility_simulator.get_paths(
+            vol_start=vol_start,
+            terms=time,
+            noise=vol_noise,
+            n_paths=n_paths
+        )
 
         drift = (risk_free_rate_fn(time) - dividends_fn(time) - 0.5 * volatility) * d_time
-        drift = np.array(drift).reshape(1, len(time), n_stocks, 1)
+        drift = np.array(drift).reshape(n_paths, len(time), n_stocks, 1)
+
+        volatility = np.expand_dims(volatility, 3)
         diffusion = volatility @ spot_noise * np.sqrt(d_time)
 
         paths = np.exp(drift + diffusion)
@@ -73,13 +82,15 @@ class CorrelatedHestonSimulator(MonteCarloSimulator):
         paths = np.cumprod(paths, axis=1).squeeze(3)
 
         bid_ask = self.bid_ask_simulator.get_paths(
+            bid_asks=bid_ask_spread,
+            time_till_maturity=time_till_maturity,
+            var_covar_fn=bid_ask_spread_var_covar_fn,
             noise=bid_ask_noise,
+            n_paths=n_paths,
         )
 
         bids = paths - bid_ask
         asks = paths + bid_ask
-
-        spot_paths = np.stack([bids, asks])
 
         rates = self.rates_simulator.simulate(
             r0=rf_rate,
@@ -88,4 +99,4 @@ class CorrelatedHestonSimulator(MonteCarloSimulator):
             n_paths=n_paths,
         )
 
-        return spot_paths, rates
+        return bids, asks, rates

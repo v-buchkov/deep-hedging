@@ -65,13 +65,13 @@ class VasicekVolatilitySimulator(VolatilitySimulator):
         self.sigma = np.std(y) * np.sqrt(self.dt)
         self._r2_fitted = self.model.score(features, y)
 
-    def get_paths(self, vol_start: float, terms: list[float], noise: np.array = None, n_paths: int = GlobalConfig.MONTE_CARLO_PATHS, *args, **kwargs) -> np.array:
+    def get_paths(self, vol_start: list[float], terms: np.array, noise: np.array = None, n_paths: int = GlobalConfig.MONTE_CARLO_PATHS, *args, **kwargs) -> np.array:
         if self.model is None:
             raise ValueError("Regression is not fitted yet!")
 
         noise = np.random.normal(size=(n_paths, len(terms))) if noise is None else noise
 
-        vols = [vol_start]
+        vols = [np.array([vol_start] * n_paths).reshape(n_paths, 1, len(vol_start))]
         t_old = terms[0]
         for i, t in enumerate(terms[1:]):
             dvol_drift = self.lambda_(t) * (self.mu_(t) - vols[-1]) * (t - t_old)
@@ -80,7 +80,7 @@ class VasicekVolatilitySimulator(VolatilitySimulator):
             vols.append(vols[-1] + dvol_drift + dvol_diffusion)
             t_old = t
 
-        vols = np.array(vols)
+        vols = np.concatenate(vols, axis=1)
         vols = np.where(vols > 0, vols, 0)
 
         return vols

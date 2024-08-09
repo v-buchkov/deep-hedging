@@ -42,7 +42,7 @@ class GBMSimulator(MonteCarloSimulator):
         drift = (risk_free_rate_fn(time) - dividends_fn(time) - 0.5 * vols) * d_time
         drift = np.array(drift).reshape(1, len(time), n_stocks, 1)
 
-        if len(spot) == 1:
+        if n_stocks == 1:
             vol_scaling = np.sqrt(vols)
         else:
             vol_scaling = np.linalg.cholesky(var_covar)

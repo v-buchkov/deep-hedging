@@ -1,4 +1,5 @@
 import abc
+from typing import Callable
 
 import numpy as np
 
@@ -13,5 +14,14 @@ class BidAskSimulator:
         self.random_seed = random_seed
 
     @abc.abstractmethod
-    def get_paths(self, noise: np.array = None, n_paths: int = GlobalConfig.MONTE_CARLO_PATHS, *args, **kwargs) -> np.array:
+    def get_paths(
+            self,
+            bid_asks: list[float],
+            time_till_maturity: float,
+            var_covar_fn: Callable[[np.array], np.array],
+            noise: np.array = None,
+            n_paths: int = GlobalConfig.MONTE_CARLO_PATHS,
+            *args,
+            **kwargs
+    ) -> np.array:
         raise NotImplementedError

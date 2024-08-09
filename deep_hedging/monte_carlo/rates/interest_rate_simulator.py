@@ -56,7 +56,7 @@ class InterestRateSimulator:
             np.random.seed(self.random_seed)
 
         paths = []
-        noise = np.random.normal(scale=self.sigma, size=(n_paths, len(terms))) if noise is None else noise
+        noise = np.random.normal(scale=self.sigma, size=(n_paths, len(terms))) if noise is None else self.sigma * noise
         for p in range(n_paths):
             path = [r0]
             for i in range(len(terms)):

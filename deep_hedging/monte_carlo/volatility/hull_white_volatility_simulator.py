@@ -1,17 +1,18 @@
 import numpy as np
 import pandas as pd
 
-from deep_hedging.monte_carlo.volatility.volatility_simulator import VolatilitySimulator
+from deep_hedging.monte_carlo.volatility.vasicek_volatility_simulator import VasicekVolatilitySimulator
+from deep_hedging.base.volatility_surface import VolatilitySurface
 
 
-class HullWhiteVolatilitySimulator(VolatilitySimulator):
+class HullWhiteVolatilitySimulator(VasicekVolatilitySimulator):
     def __init__(
             self,
             random_seed: [int, None] = None,
     ) -> None:
         super().__init__(random_seed=random_seed)
 
-    def calibrate_mu(self, volatility_smile: ...) -> None:
+    def calibrate_mu(self, volatility_surface: VolatilitySurface) -> None:
         t_old = yield_curve.instant_fwd_rate.index[0]
         fwd_rate_old = yield_curve.instant_fwd_rate.iloc[0, 0]
         mu = []
