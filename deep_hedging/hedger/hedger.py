@@ -97,12 +97,10 @@ class Hedger:
         asks: np.array,
         rates_borrow: np.array,
         rates_lend: np.array,
-        weights: [np.array, None] = None,
     ) -> [np.array, np.array]:
         mid = (bids + asks) / 2
 
-        if weights is None:
-            weights = self._get_weights_path(mid)
+        weights = self._get_weights_path(mid)
 
         if self.look_ahead:
             weights = weights[:, :-1]
