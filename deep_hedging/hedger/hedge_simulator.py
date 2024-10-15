@@ -33,7 +33,7 @@ class HedgeSimulator:
         asks: np.array,
         rates_borrow: np.array,
         rates_lend: np.array,
-    ) -> np.array:
+    ) -> tuple[np.array, np.array]:
         assert len(bids) == len(
             asks
         ), f"Bid-Ask shapes mismatch ({len(bids)} != {len(asks)})"
@@ -59,7 +59,7 @@ class HedgeSimulator:
         rates = np.where(cash_position[:, :-1] > 0, rates_lend, rates_borrow)
         interest = (rates * cash_position[:, :-1]).sum(axis=1)
 
-        return cash_outflow.sum(axis=1) + cash_inflow.sum(axis=1) + interest
+        return cash_outflow.sum(axis=1) + cash_inflow.sum(axis=1), interest
 
     def _get_weights_path(self, mid: np.array) -> [np.array, None]:
         if isinstance(self.instrument, StructuredNote):
@@ -97,17 +97,19 @@ class HedgeSimulator:
         asks: np.array,
         rates_borrow: np.array,
         rates_lend: np.array,
+        weights: [np.array, None] = None,
     ) -> [np.array, np.array]:
         mid = (bids + asks) / 2
 
-        weights = self._get_weights_path(mid)
+        if weights is None:
+            weights = self._get_weights_path(mid)
 
         if self.look_ahead:
             weights = weights[:, :-1]
         else:
             weights = weights[:, 1:]
 
-        pnl = self.calc_pnl(
+        spot_pnl, interest = self.calc_pnl(
             weights=weights,
             bids=bids,
             asks=asks,
@@ -117,7 +119,7 @@ class HedgeSimulator:
 
         payoff = self.instrument.payoff(mid)
 
-        return pnl, payoff
+        return spot_pnl, interest, payoff
 
     def price(
         self,
@@ -126,13 +128,13 @@ class HedgeSimulator:
         rates_borrow: np.array,
         rates_lend: np.array,
     ) -> float:
-        pnl, payoff = self.simulate(
+        spot_pnl, interest, payoff = self.simulate(
             bids=bids,
             asks=asks,
             rates_borrow=rates_borrow,
             rates_lend=rates_lend,
         )
-        return np.mean(payoff - pnl)
+        return np.mean(payoff - spot_pnl - interest)
 
     def std(
         self,

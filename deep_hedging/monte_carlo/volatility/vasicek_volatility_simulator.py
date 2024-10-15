@@ -10,11 +10,13 @@ from deep_hedging.config.global_config import GlobalConfig
 class VasicekVolatilitySimulator(VolatilitySimulator):
     def __init__(
         self,
+        rolling_days: int = GlobalConfig.VOLATILITY_ROLLING_DAYS,
         target_column: str = "close",
         random_seed: [int, None] = None,
     ) -> None:
         super().__init__(random_seed=random_seed)
 
+        self.rolling_days = rolling_days
         self.target_column = target_column
 
         self.random_seed = random_seed
@@ -50,6 +52,8 @@ class VasicekVolatilitySimulator(VolatilitySimulator):
 
     def fit_regression(self, data: pd.DataFrame) -> None:
         data = self._resample_to_daily(data)
+        data = data.rolling(window=self.rolling_days, min_periods=1).std()
+        data.dropna(inplace=True)
         data, lag_columns = self._create_lags(data)
 
         features = data[lag_columns].to_numpy().reshape(-1, 1)
