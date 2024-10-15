@@ -10,7 +10,7 @@ class HedgingMode(Enum):
     NEURAL = "neural"
 
 
-class HedgeSimulator:
+class Hedger:
     def __init__(
         self,
         instrument: [Instrument, StructuredNote],
