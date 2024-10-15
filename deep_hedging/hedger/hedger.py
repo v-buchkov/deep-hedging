@@ -33,7 +33,7 @@ class Hedger:
         asks: np.array,
         rates_borrow: np.array,
         rates_lend: np.array,
-    ) -> tuple[np.array, np.array]:
+    ) -> np.array:
         assert len(bids) == len(
             asks
         ), f"Bid-Ask shapes mismatch ({len(bids)} != {len(asks)})"
@@ -57,9 +57,9 @@ class Hedger:
         cash_position = cash_outflow.cumsum(axis=1) + cash_inflow.cumsum(axis=1)
 
         rates = np.where(cash_position[:, :-1] > 0, rates_lend, rates_borrow)
-        interest = (rates * cash_position[:, :-1]).sum(axis=1)
+        interest = (rates * cash_position[:, :-1])
 
-        return cash_outflow.sum(axis=1) + cash_inflow.sum(axis=1), interest
+        return cash_outflow.sum(axis=1) + cash_inflow.sum(axis=1) + interest.sum(axis=1)
 
     def _get_weights_path(self, mid: np.array) -> [np.array, None]:
         if isinstance(self.instrument, StructuredNote):
@@ -97,7 +97,7 @@ class Hedger:
         asks: np.array,
         rates_borrow: np.array,
         rates_lend: np.array,
-    ) -> [np.array, np.array]:
+    ) -> tuple[np.array, np.array]:
         mid = (bids + asks) / 2
 
         weights = self._get_weights_path(mid)
@@ -107,7 +107,7 @@ class Hedger:
         else:
             weights = weights[:, 1:]
 
-        spot_pnl, interest = self.calc_pnl(
+        hedge_pnl = self.calc_pnl(
             weights=weights,
             bids=bids,
             asks=asks,
@@ -117,7 +117,7 @@ class Hedger:
 
         payoff = self.instrument.payoff(mid)
 
-        return spot_pnl, interest, payoff
+        return hedge_pnl, payoff
 
     def price(
         self,
@@ -126,13 +126,13 @@ class Hedger:
         rates_borrow: np.array,
         rates_lend: np.array,
     ) -> float:
-        spot_pnl, interest, payoff = self.simulate(
+        hedge_pnl, payoff = self.simulate(
             bids=bids,
             asks=asks,
             rates_borrow=rates_borrow,
             rates_lend=rates_lend,
         )
-        return np.mean(payoff - spot_pnl - interest)
+        return np.mean(payoff - hedge_pnl)
 
     def std(
         self,
@@ -141,10 +141,10 @@ class Hedger:
         rates_borrow: np.array,
         rates_lend: np.array,
     ) -> float:
-        pnl, payoff = self.simulate(
+        hedge_pnl, payoff = self.simulate(
             bids=bids,
             asks=asks,
             rates_borrow=rates_borrow,
             rates_lend=rates_lend,
         )
-        return np.std(pnl - payoff)
+        return np.std(payoff - hedge_pnl)
