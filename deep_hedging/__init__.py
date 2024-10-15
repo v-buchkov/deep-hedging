@@ -5,6 +5,9 @@ from deep_hedging.base.instrument import Instrument
 from deep_hedging.base.frequency import Frequency
 from deep_hedging.base.currency import Currency
 
+from deep_hedging.base.volatility_surface import VolatilitySmile
+from deep_hedging.base.volatility_surface import VolatilitySurface
+
 from deep_hedging.underlyings import Ticker, Tickers, Underlyings
 from deep_hedging.curve.yield_curve import YieldCurves
 from deep_hedging.fixed_income import ZeroCouponBond, FixedCouponBond

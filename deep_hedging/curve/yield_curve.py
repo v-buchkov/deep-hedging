@@ -102,6 +102,12 @@ class YieldCurve:
         return self._rates_df
 
     @property
+    def instant_fwd_rate(self) -> pd.DataFrame:
+        if self._instant_fwd_rate is None:
+            raise ValueError("Rate data is not fitted yet! Call .create_curve() first.")
+        return self._instant_fwd_rate
+
+    @property
     def discount_factors_df(self) -> pd.DataFrame:
         return self._discount_factors
 

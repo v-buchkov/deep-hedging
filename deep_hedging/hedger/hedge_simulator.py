@@ -7,10 +7,16 @@ from deep_hedging.base import Instrument, StructuredNote
 
 class HedgingMode(Enum):
     DELTA = "delta"
+    NEURAL = "neural"
 
 
 class HedgeSimulator:
-    def __init__(self, instrument: [Instrument, StructuredNote], hedging_mode: str = None, look_ahead: bool = False):
+    def __init__(
+        self,
+        instrument: [Instrument, StructuredNote],
+        hedging_mode: str = None,
+        look_ahead: bool = False,
+    ):
         self.instrument = instrument
 
         if hedging_mode is None:
@@ -27,7 +33,7 @@ class HedgeSimulator:
         asks: np.array,
         rates_borrow: np.array,
         rates_lend: np.array,
-    ) -> np.array:
+    ) -> tuple[np.array, np.array]:
         assert len(bids) == len(
             asks
         ), f"Bid-Ask shapes mismatch ({len(bids)} != {len(asks)})"
@@ -53,7 +59,7 @@ class HedgeSimulator:
         rates = np.where(cash_position[:, :-1] > 0, rates_lend, rates_borrow)
         interest = (rates * cash_position[:, :-1]).sum(axis=1)
 
-        return cash_outflow.sum(axis=1) + cash_inflow.sum(axis=1) + interest
+        return cash_outflow.sum(axis=1) + cash_inflow.sum(axis=1), interest
 
     def _get_weights_path(self, mid: np.array) -> [np.array, None]:
         if isinstance(self.instrument, StructuredNote):
@@ -63,8 +69,12 @@ class HedgeSimulator:
 
         all_weights = []
         for instrument in instruments:
-            if hasattr(instrument, "time_till_maturity") and hasattr(instrument, self.hedging_mode.value):
-                till_maturity = np.linspace(instrument.time_till_maturity, 1e-6, mid.shape[1])
+            if hasattr(instrument, "time_till_maturity") and hasattr(
+                instrument, self.hedging_mode.value
+            ):
+                till_maturity = np.linspace(
+                    instrument.time_till_maturity, 1e-6, mid.shape[1]
+                )
 
                 hedging_fn = getattr(instrument, self.hedging_mode.value)
 
@@ -72,7 +82,9 @@ class HedgeSimulator:
                 for day in range(mid.shape[1]):
                     weights_path.append(
                         list(
-                            hedging_fn(spot=mid[:, day], till_maturity=till_maturity[day]).flatten()
+                            hedging_fn(
+                                spot=mid[:, day], till_maturity=till_maturity[day]
+                            ).flatten()
                         )
                     )
                 all_weights.append(weights_path)
@@ -80,22 +92,24 @@ class HedgeSimulator:
         return np.array(all_weights).T.sum(axis=2)
 
     def simulate(
-            self,
-            bids: np.array,
-            asks: np.array,
-            rates_borrow: np.array,
-            rates_lend: np.array,
+        self,
+        bids: np.array,
+        asks: np.array,
+        rates_borrow: np.array,
+        rates_lend: np.array,
+        weights: [np.array, None] = None,
     ) -> [np.array, np.array]:
         mid = (bids + asks) / 2
 
-        weights = self._get_weights_path(mid)
+        if weights is None:
+            weights = self._get_weights_path(mid)
 
         if self.look_ahead:
             weights = weights[:, :-1]
         else:
             weights = weights[:, 1:]
 
-        pnl = self.calc_pnl(
+        spot_pnl, interest = self.calc_pnl(
             weights=weights,
             bids=bids,
             asks=asks,
@@ -105,29 +119,29 @@ class HedgeSimulator:
 
         payoff = self.instrument.payoff(mid)
 
-        return pnl, payoff
+        return spot_pnl, interest, payoff
 
     def price(
-            self,
-            bids: np.array,
-            asks: np.array,
-            rates_borrow: np.array,
-            rates_lend: np.array,
+        self,
+        bids: np.array,
+        asks: np.array,
+        rates_borrow: np.array,
+        rates_lend: np.array,
     ) -> float:
-        pnl, payoff = self.simulate(
+        spot_pnl, interest, payoff = self.simulate(
             bids=bids,
             asks=asks,
             rates_borrow=rates_borrow,
             rates_lend=rates_lend,
         )
-        return np.mean(pnl - payoff)
+        return np.mean(payoff - spot_pnl - interest)
 
     def std(
-            self,
-            bids: np.array,
-            asks: np.array,
-            rates_borrow: np.array,
-            rates_lend: np.array,
+        self,
+        bids: np.array,
+        asks: np.array,
+        rates_borrow: np.array,
+        rates_lend: np.array,
     ) -> float:
         pnl, payoff = self.simulate(
             bids=bids,

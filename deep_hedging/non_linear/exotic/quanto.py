@@ -1,12 +1,10 @@
-from functools import lru_cache
-
 import numpy as np
 import pandas as pd
 
 from deep_hedging.non_linear.base_option import BaseOption
 from deep_hedging.underlyings.underlyings import Underlyings
 from deep_hedging.curve.yield_curve import YieldCurves
-from deep_hedging.monte_carlo.gbm_quanto_pricer import GBMQuantoPricer
+from deep_hedging.monte_carlo.spot.gbm_quanto_simulator import GBMQuantoSimulator
 
 
 class QuantoOption:
@@ -36,7 +34,7 @@ class QuantoOption:
             data=data,
         )
 
-        self._quanto_pricer = GBMQuantoPricer(
+        self._quanto_pricer = GBMQuantoSimulator(
             self.option.payoff,
             option.underlyings,
             modifying_underlyings,
