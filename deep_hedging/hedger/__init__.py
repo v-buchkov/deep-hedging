@@ -1,1 +1,1 @@
-from deep_hedging.hedger.hedge_simulator import HedgeSimulator
+from deep_hedging.hedger.hedger import Hedger
