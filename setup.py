@@ -11,6 +11,7 @@ setup(
         "deep_hedging/dl/baselines",
         "deep_hedging/dl/models",
         "deep_hedging/fixed_income",
+        "deep_hedging/hedger",
         "deep_hedging/linear",
         "deep_hedging/monte_carlo",
         "deep_hedging/monte_carlo/bid_ask",

@@ -22,4 +22,4 @@ from deep_hedging.dl.spot_dataset import SpotDataset
 from deep_hedging.dl.models import MLPHedger, LSTMHedger, LSTMHedgerTexts
 from deep_hedging.dl.baselines import BaselineForward, BaselineEuropeanCall
 
-from deep_hedging.hedger.hedger import HedgeSimulator
+from deep_hedging.hedger.hedger import Hedger
