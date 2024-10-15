@@ -24,7 +24,7 @@ class GBMSimulator(MonteCarloSimulator):
         var_covar_fn: Callable[[np.array], np.array],
         n_paths: [int, None] = None,
     ) -> np.array:
-        days_till_maturity = int(round(GlobalConfig.TRADING_DAYS * time_till_maturity))
+        days_till_maturity = int(round(GlobalConfig.CALENDAR_DAYS * time_till_maturity))
 
         if n_paths is None:
             n_paths = GlobalConfig.MONTE_CARLO_PATHS

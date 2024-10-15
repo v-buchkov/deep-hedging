@@ -14,7 +14,7 @@ class Hedger:
     def __init__(
         self,
         instrument: [Instrument, StructuredNote],
-        hedging_mode: str = None,
+        hedging_mode: [str, None] = None,
         look_ahead: bool = False,
     ):
         self.instrument = instrument
@@ -49,17 +49,21 @@ class Hedger:
         weights_diff = np.diff(weights_all, n=1, axis=1)
 
         bought = np.where(weights_diff > 0, weights_diff, 0)
-        sold = np.where(weights_diff < 0, -weights_diff, 0)
+        sold = np.where(weights_diff < 0, weights_diff, 0)
 
         cash_outflow = -asks * bought
-        cash_inflow = bids * sold
+        cash_inflow = -bids * sold
 
-        cash_position = cash_outflow.cumsum(axis=1) + cash_inflow.cumsum(axis=1)
+        cash_position = (cash_outflow + cash_inflow).cumsum(axis=1)
 
         rates = np.where(cash_position[:, :-1] > 0, rates_lend, rates_borrow)
         interest = (rates * cash_position[:, :-1])
 
-        return cash_outflow.sum(axis=1) + cash_inflow.sum(axis=1) + interest.sum(axis=1)
+        rates_cmpd = np.where(interest > 0, rates_lend, rates_borrow)
+        rates_cmpd = (np.exp(rates_cmpd * np.arange(1, weights_diff.shape[1])) - 1)
+        interest += (rates_cmpd * interest)
+
+        return (cash_outflow + cash_inflow).sum(axis=1) + interest.sum(axis=1)
 
     def _get_weights_path(self, mid: np.array) -> [np.array, None]:
         if isinstance(self.instrument, StructuredNote):
@@ -132,7 +136,8 @@ class Hedger:
             rates_borrow=rates_borrow,
             rates_lend=rates_lend,
         )
-        return np.mean(payoff - hedge_pnl)
+        rf_rate = self.instrument.yield_curve(self.instrument.time_till_maturity)
+        return np.mean(payoff - hedge_pnl) * np.exp(-rf_rate * self.instrument.time_till_maturity)
 
     def std(
         self,
