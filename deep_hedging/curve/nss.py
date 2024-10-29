@@ -15,6 +15,7 @@ class NelsonSiegelCurve(YieldCurve):
         currency: str = None,
         create_curve_only: bool = False,
         compounding_frequency: Frequency = Frequency.CONTINUOUS,
+        decimal_factor: [float, None] = None,
         initial_terms: np.array = np.linspace(
             1 / GlobalConfig.CALENDAR_DAYS,
             GlobalConfig.YEARS_IN_CURVE,
@@ -31,6 +32,7 @@ class NelsonSiegelCurve(YieldCurve):
             currency=currency,
             compounding_frequency=compounding_frequency,
             create_curve_only=create_curve_only,
+            decimal_factor=decimal_factor,
         )
 
     def get_rates(self, terms: list[float]) -> np.array:
