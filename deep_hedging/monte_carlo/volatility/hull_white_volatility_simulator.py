@@ -1,14 +1,16 @@
 import numpy as np
 import pandas as pd
 
-from deep_hedging.monte_carlo.volatility.vasicek_volatility_simulator import VasicekVolatilitySimulator
+from deep_hedging.monte_carlo.volatility.vasicek_volatility_simulator import (
+    VasicekVolatilitySimulator,
+)
 from deep_hedging.base.volatility_surface import VolatilitySurface
 
 
 class HullWhiteVolatilitySimulator(VasicekVolatilitySimulator):
     def __init__(
-            self,
-            random_seed: [int, None] = None,
+        self,
+        random_seed: [int, None] = None,
     ) -> None:
         super().__init__(random_seed=random_seed)
 
@@ -21,11 +23,11 @@ class HullWhiteVolatilitySimulator(VasicekVolatilitySimulator):
 
             # TODO: check that not constant
             mu_bootstrapped = (
-                    dfwd_rate
-                    + self.lambda_(t) * fwd_rate
-                    + self.sigma**2
-                    / (2 * self.lambda_(t))
-                    * (1 - np.exp(-2 * self.lambda_(t) * t))
+                dfwd_rate
+                + self.lambda_(t) * fwd_rate
+                + self.sigma**2
+                / (2 * self.lambda_(t))
+                * (1 - np.exp(-2 * self.lambda_(t) * t))
             )
             # According to https://quant.stackexchange.com/questions/38739/how-to-get-set-the-theta-function-in-the-hull-white-model-to-replicate-the-curre
             # , we estimate theta(t) * kappa (under "Slightly rewriting your SDE") => need to divide by kappa <=> divide by lambda in this notation

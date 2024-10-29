@@ -18,6 +18,7 @@ class YieldCurve:
         currency: str = None,
         create_curve_only: bool = False,
         compounding_frequency: Frequency = Frequency.CONTINUOUS,
+        decimal_factor: [float, None] = None,
         *args,
         **kwargs
     ) -> None:
@@ -32,6 +33,7 @@ class YieldCurve:
 
         self.create_curve_only = create_curve_only
         self.compounding_frequency = compounding_frequency
+        self.decimal_factor = decimal_factor
 
         self._initialize(initial_terms)
         self.discounting_conventions = DiscountingConventions()
@@ -45,7 +47,11 @@ class YieldCurve:
 
     def create_curve(self, terms: list[float]) -> None:
         self._rates_df = pd.DataFrame(
-            self.get_rates(terms), index=terms, columns=[GlobalConfig.TARGET_COLUMN]
+            self.get_rates(terms) / self.decimal_factor
+            if self.decimal_factor
+            else self.get_rates(terms),
+            index=terms,
+            columns=[GlobalConfig.TARGET_COLUMN],
         )
 
         if not self.create_curve_only:

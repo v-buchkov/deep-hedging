@@ -56,12 +56,21 @@ class InterestRateSimulator:
             np.random.seed(self.random_seed)
 
         paths = []
-        noise = np.random.normal(scale=self.sigma, size=(n_paths, len(terms))) if noise is None else self.sigma * noise
+        noise = (
+            np.random.normal(scale=self.sigma, size=(n_paths, len(terms)))
+            if noise is None
+            else self.sigma * noise
+        )
         for p in range(n_paths):
             path = [r0]
             for i in range(len(terms)):
                 # TODO: rates volatility
-                path.append((self.get_simulation_drift(path[-1], terms=tuple([1] * 2)) + noise[p, i]).item())
+                path.append(
+                    (
+                        self.get_simulation_drift(path[-1], terms=tuple([1] * 2))
+                        + noise[p, i]
+                    ).item()
+                )
             paths.append(path[1:])
         return np.array(paths)
 

@@ -22,7 +22,9 @@ class VolatilitySurface:
 
         self._data_dict = {}
         for time in times:
-            self._data_dict[time] = VolatilitySmile(self.strikes[time], self.volatilities[time, :].squeeze(0))
+            self._data_dict[time] = VolatilitySmile(
+                self.strikes[time], self.volatilities[time, :].squeeze(0)
+            )
 
     def __getitem__(self, time: float, strike: float) -> float:
         return self._data_dict[time][strike]

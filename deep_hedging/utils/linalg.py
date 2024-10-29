@@ -6,7 +6,9 @@ def corr_matrix_from_cov(var_covar: np.array) -> np.array:
     return diag_inv @ var_covar @ diag_inv
 
 
-def var_covar_from_corr_array(corr_array: np.array, volatilities: np.array = None) -> np.array:
+def var_covar_from_corr_array(
+    corr_array: np.array, volatilities: np.array = None
+) -> np.array:
     if volatilities is None:
         volatilities = np.ones_like(corr_array)
     return volatilities @ corr_array @ volatilities

@@ -69,7 +69,15 @@ class VasicekVolatilitySimulator(VolatilitySimulator):
         self.sigma = np.std(y) * np.sqrt(self.dt)
         self._r2_fitted = self.model.score(features, y)
 
-    def get_paths(self, vol_start: list[float], terms: np.array, noise: np.array = None, n_paths: int = GlobalConfig.MONTE_CARLO_PATHS, *args, **kwargs) -> np.array:
+    def get_paths(
+        self,
+        vol_start: list[float],
+        terms: np.array,
+        noise: np.array = None,
+        n_paths: int = GlobalConfig.MONTE_CARLO_PATHS,
+        *args,
+        **kwargs
+    ) -> np.array:
         if self.model is None:
             raise ValueError("Regression is not fitted yet!")
 

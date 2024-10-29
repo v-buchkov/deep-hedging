@@ -50,7 +50,9 @@ class GlobalConfig:
 
     TIME_DIFF_COLUMN: str = field(
         default="time_diff",
-        metadata={"docs": "Default name of the time difference in years between observed points"},
+        metadata={
+            "docs": "Default name of the time difference in years between observed points"
+        },
     )
 
     TEXT_COLUMN: str = field(
@@ -60,17 +62,23 @@ class GlobalConfig:
 
     LEMMAS_COLUMN: str = field(
         default="lemmas",
-        metadata={"docs": "Default name of the column for lemmas from relevant text feature in market data"},
+        metadata={
+            "docs": "Default name of the column for lemmas from relevant text feature in market data"
+        },
     )
 
     EMBEDDING_COLUMN: str = field(
         default="embed",
-        metadata={"docs": "Default name of the column for embeddings from relevant text feature in market data"},
+        metadata={
+            "docs": "Default name of the column for embeddings from relevant text feature in market data"
+        },
     )
 
     SPOT_START_COLUMN: str = field(
         default="spot_start",
-        metadata={"docs": "Default name of the column for spot price reference at the inception of the derivative"},
+        metadata={
+            "docs": "Default name of the column for spot price reference at the inception of the derivative"
+        },
     )
 
     TARGET_COLUMN: str = field(
@@ -79,7 +87,7 @@ class GlobalConfig:
 
     DISCOUNT_FACTOR_COLUMN: str = field(
         default="discount_factor",
-        metadata={"docs": "Default name of the column for discount factor"}
+        metadata={"docs": "Default name of the column for discount factor"},
     )
 
     FWD_RATE_COLUMN: str = field(
@@ -89,5 +97,7 @@ class GlobalConfig:
 
     VOLATILITY_ROLLING_DAYS: int = field(
         default=12,
-        metadata={"docs": "Default number of daily returns for rolling volatility estimation"},
+        metadata={
+            "docs": "Default number of daily returns for rolling volatility estimation"
+        },
     )

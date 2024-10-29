@@ -15,13 +15,13 @@ class BidAskSimulator:
 
     @abc.abstractmethod
     def get_paths(
-            self,
-            bid_asks: list[float],
-            time_till_maturity: float,
-            var_covar_fn: Callable[[np.array], np.array],
-            noise: np.array = None,
-            n_paths: int = GlobalConfig.MONTE_CARLO_PATHS,
-            *args,
-            **kwargs
+        self,
+        bid_asks: list[float],
+        time_till_maturity: float,
+        var_covar_fn: Callable[[np.array], np.array],
+        noise: np.array = None,
+        n_paths: int = GlobalConfig.MONTE_CARLO_PATHS,
+        *args,
+        **kwargs
     ) -> np.array:
         raise NotImplementedError

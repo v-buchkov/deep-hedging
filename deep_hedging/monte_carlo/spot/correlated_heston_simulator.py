@@ -52,26 +52,29 @@ class CorrelatedHestonSimulator(MonteCarloSimulator):
 
         var_covar = np.array(corr_fn(time))
         vol_scaling = np.linalg.cholesky(var_covar)
-        vol_scaling = np.array(vol_scaling).reshape(1, len(time), noise_size, noise_size)
+        vol_scaling = np.array(vol_scaling).reshape(
+            1, len(time), noise_size, noise_size
+        )
 
         if self.random_seed is not None:
             np.random.seed(self.random_seed)
 
-        noise = vol_scaling @ np.random.normal(0, 1, size=(n_paths, len(time), noise_size, 1))
+        noise = vol_scaling @ np.random.normal(
+            0, 1, size=(n_paths, len(time), noise_size, 1)
+        )
 
         spot_noise = noise[:, :, :n_stocks, :]
-        vol_noise = noise[:, :, n_stocks:2 * n_stocks, :]
+        vol_noise = noise[:, :, n_stocks : 2 * n_stocks, :]
         bid_ask_noise = np.expand_dims(noise[:, :, -2, :], 2)
         rates_noise = np.expand_dims(noise[:, :, -1, :], 2)
 
         volatility = self.volatility_simulator.get_paths(
-            vol_start=vol_start,
-            terms=time,
-            noise=vol_noise,
-            n_paths=n_paths
+            vol_start=vol_start, terms=time, noise=vol_noise, n_paths=n_paths
         )
 
-        drift = (risk_free_rate_fn(time) - dividends_fn(time) - 0.5 * volatility) * d_time
+        drift = (
+            risk_free_rate_fn(time) - dividends_fn(time) - 0.5 * volatility
+        ) * d_time
         drift = np.array(drift).reshape(n_paths, len(time), n_stocks, 1)
 
         volatility = np.expand_dims(volatility, 3)

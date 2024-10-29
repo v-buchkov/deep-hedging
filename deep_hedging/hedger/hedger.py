@@ -57,11 +57,11 @@ class Hedger:
         cash_position = (cash_outflow + cash_inflow).cumsum(axis=1)
 
         rates = np.where(cash_position[:, :-1] > 0, rates_lend, rates_borrow)
-        interest = (rates * cash_position[:, :-1])
+        interest = rates * cash_position[:, :-1]
 
         rates_cmpd = np.where(interest > 0, rates_lend, rates_borrow)
-        rates_cmpd = (np.exp(rates_cmpd * np.arange(1, weights_diff.shape[1])) - 1)
-        interest += (rates_cmpd * interest)
+        rates_cmpd = np.exp(rates_cmpd * np.arange(1, weights_diff.shape[1])) - 1
+        interest += rates_cmpd * interest
 
         return (cash_outflow + cash_inflow).sum(axis=1) + interest.sum(axis=1)
 
@@ -137,7 +137,9 @@ class Hedger:
             rates_lend=rates_lend,
         )
         rf_rate = self.instrument.yield_curve(self.instrument.time_till_maturity)
-        return np.mean(payoff - hedge_pnl) * np.exp(-rf_rate * self.instrument.time_till_maturity)
+        return np.mean(payoff - hedge_pnl) * np.exp(
+            -rf_rate * self.instrument.time_till_maturity
+        )
 
     def std(
         self,
