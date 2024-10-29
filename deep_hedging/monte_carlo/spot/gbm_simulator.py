@@ -31,7 +31,7 @@ class GBMSimulator(MonteCarloSimulator):
 
         n_stocks = len(spot)
 
-        time = np.linspace(0, time_till_maturity, days_till_maturity)
+        time = np.linspace(0, time_till_maturity, days_till_maturity - 1)
         d_time = time[1] - time[0]
 
         var_covar = var_covar_fn(time)
